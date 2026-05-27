@@ -1008,7 +1008,8 @@ revoke all on function public.refund_free_delivery(uuid) from public, anon, auth
 
 do $$
 declare
-  bootstrap_admin_email constant text := 'raashifshaikh70@gmail.com';
+  -- Optional bootstrap admin for fresh projects. Replace this with your admin account email before running.
+  bootstrap_admin_email constant text := 'admin@droply.app';
   bootstrap_admin_id uuid;
 begin
   select id

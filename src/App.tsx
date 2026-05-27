@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
+import { RouteSEO } from "@/components/seo/RouteSEO";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -53,6 +54,7 @@ const App = () => (
         <Sonner />
         <ConfigurationWarning />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <RouteSEO />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
