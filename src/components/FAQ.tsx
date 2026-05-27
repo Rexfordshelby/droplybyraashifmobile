@@ -53,7 +53,7 @@ export function FAQ({ variant = 'page' }: FAQProps) {
           </p>
         </div>
 
-        <Accordion type="single" collapsible className="bg-card rounded-xl border border-border px-4 sm:px-6">
+        <Accordion type="single" collapsible className="rounded-lg border border-border bg-card px-4 sm:px-6">
           {FAQS.map((item, i) => (
             <AccordionItem key={i} value={`item-${i}`} className="border-border">
               <AccordionTrigger className="text-left font-medium hover:no-underline">

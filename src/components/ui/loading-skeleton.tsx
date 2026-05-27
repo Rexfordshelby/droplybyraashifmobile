@@ -17,7 +17,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function OrderCardSkeleton() {
   return (
-    <div className="rounded-xl border bg-card p-6 space-y-4">
+    <div className="rounded-lg border bg-card p-6 space-y-4">
       <div className="flex justify-between items-start">
         <div className="space-y-2">
           <Skeleton className="h-3 w-24" />

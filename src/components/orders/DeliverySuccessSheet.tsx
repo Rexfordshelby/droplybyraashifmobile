@@ -30,7 +30,7 @@ export function DeliverySuccessSheet({ open, onClose, orderId, amount }: Deliver
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 py-5">
+        <div className="my-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 py-5">
           <p className="text-xs text-muted-foreground mb-1">You earned</p>
           <p className="text-4xl font-bold text-emerald-600 flex items-center justify-center">
             <IndianRupee className="h-7 w-7" />

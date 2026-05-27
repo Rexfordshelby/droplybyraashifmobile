@@ -10,7 +10,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, showFooter = true }: MainLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
+    <div className="app-shell min-h-screen flex flex-col overflow-x-hidden">
       <Header />
       <main className="flex-1 min-w-0 pb-20 md:pb-0">
         {children}

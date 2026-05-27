@@ -141,7 +141,7 @@ export function OrderCard({
     if (order.status === 'accepted') {
       return (
         <div className="space-y-3">
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3">
+          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold">1</div>
               <p className="font-semibold text-sm">Head to pickup</p>
@@ -168,7 +168,7 @@ export function OrderCard({
             </div>
           </div>
 
-          <div className="rounded-xl bg-primary/5 border border-primary/30 p-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/30 p-3">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">2</div>
               <p className="font-semibold text-sm">Verify pickup</p>
@@ -196,7 +196,7 @@ export function OrderCard({
     if (order.status === 'picked') {
       return (
         <div className="space-y-3">
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 flex items-start gap-3">
+          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 flex items-start gap-3">
             <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">Pickup confirmed ✓</p>
@@ -204,7 +204,7 @@ export function OrderCard({
             </div>
           </div>
 
-          <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-3">
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-sm font-bold">3</div>
               <p className="font-semibold text-sm">Head to drop</p>
@@ -245,7 +245,7 @@ export function OrderCard({
     if (order.status === 'in_transit') {
       return (
         <div className="space-y-3">
-          <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-3">
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-sm font-bold">4</div>
               <p className="font-semibold text-sm">At the drop — meet the receiver</p>
@@ -261,7 +261,7 @@ export function OrderCard({
             )}
           </div>
 
-          <div className="rounded-xl bg-primary/5 border border-primary/30 p-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/30 p-3">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">5</div>
               <p className="font-semibold text-sm">Verify with receiver</p>
@@ -332,7 +332,8 @@ export function OrderCard({
         amount={Number(order.price_offered)}
       />
 
-      <Card className={`card-elevated hover-lift animate-slide-up transition-all ${order.status === 'pending' && isRider ? 'ring-2 ring-primary/40 shadow-glow' : ''}`}>
+      <Card className={`card-elevated hover-lift animate-slide-up overflow-hidden transition-all ${order.status === 'pending' && isRider ? 'ring-2 ring-primary/40' : ''}`}>
+        <div className={`h-1 ${order.status === 'delivered' ? 'bg-success' : order.status === 'cancelled' ? 'bg-destructive' : 'bg-primary'}`} />
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -379,7 +380,7 @@ export function OrderCard({
 
           {/* Price highlight for riders on pending orders */}
           {isRider && order.status === 'pending' && (
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 text-center border border-primary/20">
+            <div className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-center">
               <p className="text-xs text-muted-foreground mb-1">Earn</p>
               <p className="text-3xl font-bold text-primary flex items-center justify-center">
                 <IndianRupee className="h-6 w-6" />

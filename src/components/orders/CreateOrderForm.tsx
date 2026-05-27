@@ -420,7 +420,7 @@ export function CreateOrderForm() {
   const progressPercent = (currentStep / 4) * 100;
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="w-full max-w-none space-y-5">
       {/* Free delivery banner */}
       {useFreeDelivery && (
         <Card className="border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5">
@@ -441,7 +441,8 @@ export function CreateOrderForm() {
       )}
 
       {/* Progress Header */}
-      <Card className="card-elevated">
+      <Card className="card-elevated overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-primary via-success to-accent" />
         <CardContent className="pt-6">
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
@@ -466,9 +467,9 @@ export function CreateOrderForm() {
                   key={step.id}
                   onClick={() => reachable && !isCurrent && setCurrentStep(step.id)}
                   disabled={!reachable}
-                  className={`flex min-w-0 flex-col items-center rounded-lg px-1 py-2 transition-all ${reachable ? 'text-primary' : 'text-muted-foreground'} ${isCurrent ? 'bg-primary/10' : ''} ${reachable && !isCurrent ? 'cursor-pointer hover:bg-primary/5' : 'cursor-default'}`}
+                  className={`flex min-w-0 flex-col items-center rounded-md px-1 py-2 transition-all ${reachable ? 'text-primary' : 'text-muted-foreground'} ${isCurrent ? 'bg-primary/10' : ''} ${reachable && !isCurrent ? 'cursor-pointer hover:bg-primary/5' : 'cursor-default'}`}
                 >
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold mb-1 transition-all ${
+                  <div className={`h-8 w-8 rounded-md flex items-center justify-center text-sm font-bold mb-1 transition-all ${
                     completed
                       ? 'bg-primary text-primary-foreground'
                       : isCurrent
@@ -488,7 +489,7 @@ export function CreateOrderForm() {
       </Card>
 
       {/* Main Form Card */}
-      <Card className="card-elevated">
+      <Card className="card-elevated overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="font-heading text-xl flex items-center gap-2">
             <CurrentStepIcon className="h-5 w-5 text-primary" />
@@ -902,7 +903,7 @@ export function CreateOrderForm() {
               {currentStep === 4 && (
                 <div className="space-y-5 animate-fade-in">
                   <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-                    <div className="rounded-xl border bg-background/80 p-4 shadow-sm animate-slide-up">
+                    <div className="rounded-lg border bg-background/80 p-4 shadow-sm animate-slide-up">
                       <div className="mb-4 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Route className="h-5 w-5" />
@@ -953,7 +954,7 @@ export function CreateOrderForm() {
                     </div>
 
                     {useFreeDelivery ? (
-                      <div className="relative overflow-hidden rounded-xl border border-emerald-500/40 bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 p-5 text-center shadow-sm animate-slide-up stagger-1">
+                      <div className="relative overflow-hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-5 text-center shadow-sm animate-slide-up stagger-1">
                         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary to-emerald-400 animate-soft-pulse" />
                         <Sparkles className="mx-auto mb-3 h-10 w-10 text-emerald-600" />
                         <p className="text-sm text-muted-foreground line-through">Normal price ₹{minimumPrice}</p>
@@ -962,7 +963,7 @@ export function CreateOrderForm() {
                         <p className="mt-2 text-xs text-muted-foreground">Droply pays ₹{minimumPrice} to the rider on your behalf.</p>
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm animate-slide-up stagger-1">
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm animate-slide-up stagger-1">
                         <div className="mb-4 flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2 font-medium text-amber-800 dark:text-amber-200">
                             <IndianRupee className="h-5 w-5" />
@@ -1097,7 +1098,7 @@ export function CreateOrderForm() {
               )}
 
               {/* Navigation */}
-              <div className="sticky bottom-3 z-20 flex flex-col gap-3 rounded-xl border bg-background/90 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+              <div className="sticky bottom-3 z-20 flex flex-col gap-3 rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   {currentStep > 1 ? (
                     <Button type="button" variant="outline" onClick={goBack} className="w-full sm:w-auto">

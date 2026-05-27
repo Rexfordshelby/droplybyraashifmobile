@@ -1,51 +1,68 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, Shield, Clock, MapPin, IndianRupee, ArrowRight, Bike, CheckCircle, Zap } from 'lucide-react';
+import {
+  ArrowRight,
+  Bike,
+  CheckCircle,
+  Clock,
+  IndianRupee,
+  KeyRound,
+  MapPin,
+  Package,
+  Phone,
+  Shield,
+  Truck,
+  Zap,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { FAQ } from '@/components/FAQ';
 import { useAuth } from '@/hooks/useAuth';
 import { useGuestAuth } from '@/hooks/useGuestAuth';
 
-const features = [
+const featureCards = [
   {
     icon: Clock,
-    title: 'Same Day Delivery',
-    description: 'Get your parcels delivered within hours, not days',
+    title: 'Same-day moves',
+    description: 'Fast local delivery for documents, food, clothes, gifts, and small parcels.',
   },
   {
-    icon: MapPin,
-    title: 'Real-time Tracking',
-    description: 'Track your delivery status from pickup to drop-off',
+    icon: KeyRound,
+    title: 'OTP handoff',
+    description: 'Pickup and delivery checks reduce wrong handoffs and confused receivers.',
   },
   {
     icon: Shield,
-    title: 'Secure Delivery',
-    description: 'OTP-verified delivery ensures your parcel reaches the right person',
+    title: 'Clear limits',
+    description: 'Declared item value, fragile flags, proof photos, and clear rider instructions.',
   },
   {
     icon: IndianRupee,
-    title: 'Affordable Pricing',
-    description: 'Transparent pricing starting at just ₹30 + ₹8/km',
+    title: 'Simple pricing',
+    description: 'Transparent route pricing with free-delivery promos for new senders.',
   },
 ];
 
-const howItWorks = [
+const workflow = [
   {
-    step: 1,
-    title: 'Book a Delivery',
-    description: 'Enter pickup and drop addresses, describe your item, and set your price',
+    title: 'Book',
+    detail: 'Enter pickup, drop, phones, item type, and value.',
   },
   {
-    step: 2,
-    title: 'Rider Accepts',
-    description: 'A nearby rider accepts your order and heads to pickup location',
+    title: 'Match',
+    detail: 'An approved rider accepts and sees the next best action.',
   },
   {
-    step: 3,
-    title: 'Track & Receive',
-    description: 'Track the delivery in real-time and receive with OTP verification',
+    title: 'Verify',
+    detail: 'QR pickup, receiver OTP, proof photo, and live updates.',
   },
+];
+
+const trustPoints = [
+  'Receiver tracking link',
+  'Rider approval controls',
+  'Admin support queue',
+  'Delivery proof uploads',
 ];
 
 export default function Index() {
@@ -56,257 +73,272 @@ export default function Index() {
   const handleQuickSend = async () => {
     if (user) {
       navigate('/send');
-    } else {
-      const { error } = await signInAsGuest();
-      if (!error) {
-        navigate('/send');
-      }
+      return;
     }
+
+    const { error } = await signInAsGuest();
+    if (!error) navigate('/send');
   };
 
   return (
     <MainLayout>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden hero-gradient">
-        <div className="container py-20 md:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-4 py-2 rounded-full text-sm font-bold mb-6 border border-emerald-500/30">
-                <Zap className="h-4 w-4" />
-                🎁 First 2 deliveries FREE for new users
-              </div>
-              <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                Mumbai's Fastest{' '}
-                <span className="text-primary">Parcel Delivery</span>
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-                Send parcels across the city with our network of reliable riders. 
-                Same-day delivery, real-time tracking, and secure OTP verification.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button 
-                  size="lg" 
-                  className="btn-gradient text-lg"
-                  onClick={handleQuickSend}
-                  disabled={guestLoading}
-                >
-                  <Package className="mr-2 h-5 w-5" />
-                  {guestLoading ? 'Starting...' : 'Quick Send'}
-                </Button>
-                <Button asChild size="lg" variant="outline" className="text-lg">
-                  <Link to="/become-rider">
-                    <Bike className="mr-2 h-5 w-5" />
-                    Become a Rider
-                  </Link>
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                Guest users get a 24-hour session. <Link to="/auth?tab=signup" className="text-primary hover:underline">Create an account</Link> to track all orders.
-              </p>
+      <section className="relative min-h-[calc(100vh-68px)] overflow-hidden">
+        <div className="hero-map" aria-hidden="true">
+          <span className="route-line left-[8%] top-[28%] w-[34%] rotate-[15deg]" />
+          <span className="route-line right-[7%] top-[44%] w-[40%] -rotate-[18deg] stagger-2" />
+          <span className="route-line left-[24%] bottom-[23%] w-[48%] rotate-[-6deg] stagger-3" />
+          <span className="route-dot left-[16%] top-[31%]" />
+          <span className="route-dot right-[24%] top-[38%]" />
+          <span className="route-dot left-[42%] bottom-[22%]" />
+        </div>
+
+        <div className="container relative z-10 flex min-h-[calc(100vh-68px)] flex-col justify-center py-10 md:py-16">
+          <div className="max-w-4xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border bg-card/90 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm backdrop-blur">
+              <Zap className="h-4 w-4" />
+              First 2 deliveries free for new users
             </div>
-            <div className="relative hidden lg:block">
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-success/20 rounded-3xl blur-3xl" />
-              <Card className="card-elevated relative z-10">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-success/10 rounded-lg">
-                      <div className="h-3 w-3 rounded-full bg-success animate-soft-pulse" />
-                      <div>
-                        <p className="text-sm font-medium">Pickup: Andheri West</p>
-                        <p className="text-xs text-muted-foreground">Near Metro Station</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 p-4 bg-primary/10 rounded-lg">
-                      <div className="h-3 w-3 rounded-full bg-primary" />
-                      <div>
-                        <p className="text-sm font-medium">Drop: Bandra East</p>
-                        <p className="text-xs text-muted-foreground">BKC Complex</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <span className="text-sm text-muted-foreground">Estimated Price</span>
-                      <span className="text-2xl font-bold">₹78</span>
-                    </div>
-                    <Button className="w-full btn-gradient" disabled>
-                      <Truck className="mr-2 h-4 w-4" />
-                      Rider on the way!
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Access CTA for Mobile */}
-      <section className="lg:hidden py-4 bg-primary/5 sticky top-16 z-40">
-        <div className="container">
-          <Button 
-            className="w-full btn-gradient"
-            size="lg"
-            onClick={handleQuickSend}
-            disabled={guestLoading}
-          >
-            <Zap className="mr-2 h-5 w-5" />
-            {guestLoading ? 'Starting...' : 'Send Parcel Now - No Signup'}
-          </Button>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">
-              Why Choose Droply?
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              We make local deliveries simple, fast, and affordable for everyone
+            <h1 className="max-w-3xl font-heading text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+              Mumbai parcel delivery with cleaner control from booking to handoff.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+              Droply helps senders book quickly, riders follow a verified flow, and receivers confirm delivery with OTP tracking.
             </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <Card key={feature.title} className="card-elevated text-center">
-                <CardHeader>
-                  <div className="mx-auto h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">
-              How It Works
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Get your parcel delivered in 3 simple steps
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {howItWorks.map((item, index) => (
-              <div key={item.step} className="relative">
-                <div className="text-center">
-                  <div className="mx-auto h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mb-6">
-                    {item.step}
-                  </div>
-                  <h3 className="font-heading text-xl font-semibold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </div>
-                {index < howItWorks.length - 1 && (
-                  <ArrowRight className="hidden md:block absolute top-8 -right-4 h-8 w-8 text-muted-foreground/30" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <IndianRupee className="h-12 w-12 mx-auto text-primary mb-6" />
-            <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-muted-foreground mb-8">
-              No hidden charges. Pay only for what you use.
-            </p>
-            <Card className="card-elevated inline-block">
-              <CardContent className="p-8">
-                <div className="flex items-baseline justify-center gap-2 mb-4">
-                  <span className="text-5xl font-bold">₹30</span>
-                  <span className="text-muted-foreground">base</span>
-                  <span className="text-3xl font-bold">+</span>
-                  <span className="text-5xl font-bold">₹8</span>
-                  <span className="text-muted-foreground">/km</span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Example: 5km delivery = ₹30 + (5 × ₹8) = <strong>₹70</strong>
-                </p>
-                <Button onClick={handleQuickSend} className="btn-gradient" disabled={guestLoading}>
-                  Calculate Your Price
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Rider CTA Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <Bike className="h-16 w-16 mx-auto text-primary mb-6" />
-            <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">
-              Want to Earn with Your Vehicle?
-            </h2>
-            <p className="text-muted-foreground mb-8 text-lg">
-              Join our rider network and earn money on your own schedule. 
-              Whether you have a bicycle, bike, scooter, or car - we welcome you!
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-5 w-5 text-success" />
-                <span>Flexible hours</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-5 w-5 text-success" />
-                <span>Weekly payouts</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-5 w-5 text-success" />
-                <span>Be your own boss</span>
-              </div>
-            </div>
-            <Button asChild size="lg" className="btn-gradient">
-              <Link to="/become-rider">
-                Apply Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <FAQ />
-
-      {/* Final CTA */}
-      <section className="py-20">
-        <div className="container">
-          <Card className="card-elevated bg-gradient-to-r from-primary/10 to-success/10 border-0">
-            <CardContent className="py-12 text-center">
-              <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">
-                Ready to Send Your First Parcel?
-              </h2>
-              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-                Join thousands of users who trust Droply for their delivery needs. 
-                No signup required to get started!
-              </p>
-              <Button 
-                size="lg" 
-                className="btn-gradient text-lg"
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                className="btn-gradient h-12 px-6 text-base"
                 onClick={handleQuickSend}
                 disabled={guestLoading}
               >
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <Package className="h-5 w-5" />
+                {guestLoading ? 'Starting order' : 'Send a parcel'}
               </Button>
-            </CardContent>
-          </Card>
+              <Button asChild size="lg" variant="outline" className="h-12 px-6 text-base">
+                <Link to="/become-rider">
+                  <Bike className="h-5 w-5" />
+                  Become a rider
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-3 md:grid-cols-3">
+            <div className="glass-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-muted-foreground">Live route</span>
+                <span className="rounded-full bg-success/10 px-2 py-1 text-xs font-semibold text-success">Ready</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex gap-3 rounded-md border bg-background/80 p-3">
+                  <MapPin className="mt-0.5 h-4 w-4 text-success" />
+                  <div>
+                    <p className="text-sm font-semibold">Andheri West</p>
+                    <p className="text-xs text-muted-foreground">Pickup confirmed by sender QR</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 rounded-md border bg-background/80 p-3">
+                  <Truck className="mt-0.5 h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold">Bandra East</p>
+                    <p className="text-xs text-muted-foreground">Receiver OTP protects drop-off</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-muted-foreground">Rider focus</span>
+                <Bike className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-3xl font-bold">1 order</p>
+              <p className="mt-1 text-sm text-muted-foreground">Single-delivery mode keeps the route simple and easier to support.</p>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
+                <div className="h-full w-2/3 rounded-full bg-primary" />
+              </div>
+            </div>
+
+            <div className="glass-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-muted-foreground">Support view</span>
+                <Shield className="h-4 w-4 text-primary" />
+              </div>
+              <div className="space-y-2">
+                {trustPoints.slice(0, 3).map((point) => (
+                  <div key={point} className="flex items-center gap-2 text-sm font-medium">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                    {point}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y bg-card/70 py-6">
+        <div className="container grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {trustPoints.map((point) => (
+            <div key={point} className="flex items-center gap-3 rounded-lg border bg-background/70 p-3">
+              <CheckCircle className="h-5 w-5 text-success" />
+              <span className="text-sm font-semibold">{point}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="py-16 md:py-20">
+        <div className="container">
+          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase text-primary">Built for real deliveries</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold md:text-4xl">A better flow for everyone involved</h2>
+            </div>
+            <p className="max-w-xl text-muted-foreground">
+              The product now separates sender booking, rider execution, admin support, and receiver confirmation.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {featureCards.map((feature) => (
+              <Card key={feature.title} className="card-elevated hover-lift">
+                <CardHeader className="pb-3">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <feature.icon className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm leading-6 text-muted-foreground">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-card/70 py-16 md:py-20">
+        <div className="container">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase text-primary">How it works</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold md:text-4xl">From request to delivery proof</h2>
+              <p className="mt-4 text-muted-foreground">
+                The flow is intentionally simple: the sender describes the job, the rider accepts one route, and the receiver confirms completion.
+              </p>
+              <Button className="btn-gradient mt-6" onClick={handleQuickSend} disabled={guestLoading}>
+                Start booking
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid gap-3">
+              {workflow.map((item, index) => (
+                <div key={item.title} className="section-shell flex gap-4 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-heading text-lg font-semibold">{item.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-20">
+        <div className="container">
+          <div className="section-shell grid gap-6 p-5 md:grid-cols-[1fr_auto] md:items-center md:p-8">
+            <div>
+              <p className="text-sm font-semibold uppercase text-primary">Pricing</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold">Transparent local pricing</h2>
+              <p className="mt-3 max-w-2xl text-muted-foreground">
+                Use the in-app estimate, offer a fair rider payout, and keep payment instructions visible through the whole order.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background p-5 text-center">
+              <p className="text-sm font-semibold text-muted-foreground">Starts from</p>
+              <div className="mt-2 flex items-end justify-center gap-1">
+                <span className="text-4xl font-bold">₹30</span>
+                <span className="pb-1 text-sm text-muted-foreground">+ ₹8/km</span>
+              </div>
+              <Button className="btn-gradient mt-5 w-full" onClick={handleQuickSend} disabled={guestLoading}>
+                Calculate order
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-card/70 py-16 md:py-20">
+        <div className="container">
+          <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase text-primary">Rider network</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold md:text-4xl">Earn on routes that are easier to complete</h2>
+              <p className="mt-4 text-muted-foreground">
+                Rider mode keeps the next action visible, gives quick call/navigation controls, and supports delivery proof upload.
+              </p>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                {['Flexible hours', 'Verified order flow', 'Clear payout view', 'Admin support'].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-sm font-semibold">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="section-shell p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Rider today</p>
+                  <p className="font-heading text-2xl font-bold">3 deliveries queued</p>
+                </div>
+                <Bike className="h-8 w-8 text-primary" />
+              </div>
+              <div className="grid gap-3">
+                <div className="flex items-center gap-3 rounded-md border bg-background p-3">
+                  <Phone className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Call sender or receiver without searching</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-md border bg-background p-3">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Open route in maps from the order card</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-md border bg-background p-3">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Complete with OTP and proof photo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <FAQ />
+
+      <section className="py-16">
+        <div className="container">
+          <div className="section-shell p-6 text-center md:p-10">
+            <h2 className="font-heading text-3xl font-bold">Ready to send your first parcel?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+              Start as a guest or sign in to keep your full order history.
+            </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button size="lg" className="btn-gradient" onClick={handleQuickSend} disabled={guestLoading}>
+                Send now
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/auth?tab=signup">Create account</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
     </MainLayout>

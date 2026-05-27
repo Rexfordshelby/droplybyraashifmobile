@@ -21,7 +21,7 @@ export function LiabilityDisclaimer({ accepted, onAcceptChange, highlight = fals
     <div className="space-y-3">
       <div
         className={cn(
-          'rounded-xl border bg-background/80 p-4 shadow-sm transition-all duration-300',
+          'rounded-lg border bg-background/80 p-4 shadow-sm transition-all duration-300',
           highlight ? 'border-destructive/70 ring-4 ring-destructive/10' : 'border-border',
           accepted && 'border-emerald-500/40 bg-emerald-500/5',
         )}
@@ -74,7 +74,7 @@ export function LiabilityDisclaimer({ accepted, onAcceptChange, highlight = fals
         </div>
       </div>
 
-      <div className="flex items-start gap-3 rounded-xl border bg-card p-4">
+      <div className="flex items-start gap-3 rounded-lg border bg-card p-4">
         <Checkbox 
           id="liability-accept" 
           checked={accepted} 

@@ -41,25 +41,48 @@ export default function SendParcel() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-6 md:py-10">
-        <Button variant="ghost" asChild className="mb-5">
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to orders
-          </Link>
-        </Button>
+      <div className="container py-5 md:py-8">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <Button variant="ghost" asChild>
+            <Link to="/dashboard">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to orders
+            </Link>
+          </Button>
+          <div className="hidden rounded-full border bg-card/90 px-3 py-1 text-xs font-semibold text-muted-foreground sm:block">
+            Secure sender booking
+          </div>
+        </div>
 
         <div className="grid xl:grid-cols-[1fr_360px] gap-6 items-start">
           <div className="min-w-0">
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-3">
+            <div className="mb-5 rounded-lg border bg-card/90 p-5 shadow-sm">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                Secure Mumbai delivery
+                Mumbai delivery command
               </div>
-              <h1 className="font-heading text-3xl md:text-4xl font-bold">Send a parcel</h1>
-              <p className="text-muted-foreground mt-2 max-w-2xl">
-                Create the order, share the receiver link, and keep pickup verification in one clean flow.
-              </p>
+              <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                <div>
+                  <h1 className="font-heading text-3xl md:text-4xl font-bold">Send a parcel</h1>
+                  <p className="text-muted-foreground mt-2 max-w-2xl">
+                    Book the route, declare the item, share the receiver link, and keep verification in one flow.
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-md border bg-background p-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Step</p>
+                    <p className="text-lg font-bold">4</p>
+                  </div>
+                  <div className="rounded-md border bg-background p-2">
+                    <p className="text-xs font-semibold text-muted-foreground">OTP</p>
+                    <p className="text-lg font-bold">On</p>
+                  </div>
+                  <div className="rounded-md border bg-background p-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Proof</p>
+                    <p className="text-lg font-bold">Ready</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <CreateOrderForm />
           </div>
@@ -75,8 +98,8 @@ export default function SendParcel() {
                 </div>
                 <div className="space-y-3">
                   {flowPoints.map((point) => (
-                    <div key={point.title} className="flex gap-3 rounded-lg border bg-background/70 p-3">
-                      <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div key={point.title} className="flex gap-3 rounded-md border bg-background/80 p-3">
+                      <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                         <point.icon className="h-4 w-4" />
                       </div>
                       <div>

@@ -89,7 +89,7 @@ export function OrderQRCode({ order, type = 'pickup', showButton = true }: Order
 
   const QRContent = () => (
     <div className="flex flex-col items-center space-y-4">
-      <div className="bg-background p-4 rounded-xl shadow-lg border">
+      <div className="rounded-lg border bg-background p-4 shadow-lg">
         <img 
           src={qrUrl} 
           alt={`${type} QR Code`}

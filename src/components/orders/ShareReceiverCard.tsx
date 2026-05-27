@@ -48,7 +48,7 @@ export function ShareReceiverCard({
   const whatsappUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
 
   return (
-    <div className={`rounded-xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 ${compact ? 'p-3' : 'p-4'} space-y-3`}>
+    <div className={`rounded-lg border-2 border-primary/40 bg-primary/10 ${compact ? 'p-3' : 'p-4'} space-y-3`}>
       <div className="flex items-start gap-2">
         <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
           <Link2 className="h-4 w-4" />

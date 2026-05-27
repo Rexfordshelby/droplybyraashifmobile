@@ -30,47 +30,48 @@ export function Header() {
   };
 
   const isActive = (path: string) => location.pathname === path;
+  const navButtonClass = (path: string, tone = '') =>
+    `h-10 rounded-md px-3 ${isActive(path) ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'text-muted-foreground hover:text-foreground'} ${tone}`;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/30 dark:border-white/10 bg-card/60 backdrop-blur-xl supports-[backdrop-filter]:bg-card/40">
-      <div className="container flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b bg-card/95 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-card/90">
+      <div className="container flex h-[68px] items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <DroplyLogo size={36} wordmarkClassName="text-xl hidden sm:block" />
           </Link>
 
-          {/* Desktop Quick Actions */}
           {user && (
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden items-center gap-1 rounded-lg border bg-background/70 p-1 md:flex">
               <Link to="/dashboard">
-                <Button variant={isActive('/dashboard') ? 'secondary' : 'ghost'} size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className={navButtonClass('/dashboard')}>
                   <LayoutDashboard className="h-4 w-4" />
-                  My Orders
+                  Orders
                 </Button>
               </Link>
               <Link to="/send">
-                <Button variant={isActive('/send') ? 'secondary' : 'ghost'} size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className={navButtonClass('/send')}>
                   <Send className="h-4 w-4" />
-                  Send Parcel
+                  Send
                 </Button>
               </Link>
               {isRider && (
                 <Link to="/rider">
-                  <Button variant={isActive('/rider') ? 'secondary' : 'ghost'} size="sm" className="gap-2 text-emerald-600">
+                  <Button variant="ghost" size="sm" className={navButtonClass('/rider', isActive('/rider') ? '' : 'text-emerald-700')}>
                     <Bike className="h-4 w-4" />
-                    Rider Mode
+                    Rider
                   </Button>
                 </Link>
               )}
               {isAdmin && (
                 <Link to="/admin">
                   <Button
-                    variant={isActive('/admin') ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     size="sm"
-                    className="gap-2 text-primary"
+                    className={navButtonClass('/admin', isActive('/admin') ? '' : 'text-primary')}
                   >
                     <ShieldCheck className="h-4 w-4" />
-                    Admin Panel
+                    Admin
                   </Button>
                 </Link>
               )}
@@ -78,24 +79,21 @@ export function Header() {
           )}
         </div>
 
-        {/* Desktop Right Side */}
         <nav className="hidden md:flex items-center gap-2">
           {user ? (
             <>
-              {/* Become Rider CTA - only show if not already a rider */}
               {!isRider && (
                 <Link to="/become-rider">
-                  <Button variant="outline" size="sm" className="gap-2 border-primary/50 text-primary hover:bg-primary/10">
+                  <Button variant="outline" size="sm" className="h-10 gap-2 border-primary/40 text-primary hover:bg-primary/10">
                     <Bike className="h-4 w-4" />
                     Earn Money
                   </Button>
                 </Link>
               )}
               
-              {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button variant="ghost" size="icon" className="relative rounded-md">
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
                       <Badge 
@@ -107,7 +105,7 @@ export function Header() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 bg-popover">
+                <DropdownMenuContent align="end" className="w-80 border bg-popover shadow-xl">
                   <div className="p-2">
                     <p className="text-sm font-medium">Notifications</p>
                     {unreadCount === 0 ? (
@@ -123,14 +121,13 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Profile Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="rounded-md">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuContent align="end" className="border bg-popover shadow-xl">
                   <DropdownMenuItem asChild>
                     <Link to="/profile">Profile</Link>
                   </DropdownMenuItem>
@@ -150,23 +147,22 @@ export function Header() {
           ) : (
             <>
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="ghost" size="sm" className="h-10">Sign In</Button>
               </Link>
               <Link to="/auth?tab=signup">
-                <Button size="sm" className="btn-gradient">Get Started</Button>
+                <Button size="sm" className="btn-gradient h-10">Get Started</Button>
               </Link>
             </>
           )}
         </nav>
 
-        {/* Mobile Navigation */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="rounded-md">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] bg-background">
+          <SheetContent side="right" className="w-[300px] border-l bg-background p-5">
             <div className="flex items-center gap-2 mb-8">
               <DroplyLogo size={36} wordmarkClassName="text-xl" />
             </div>
@@ -174,11 +170,10 @@ export function Header() {
             <nav className="flex flex-col gap-2">
               {user ? (
                 <>
-                  {/* Primary Actions */}
                   <Link 
                     to="/send" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-primary text-primary-foreground font-medium"
+                    className="flex items-center gap-3 rounded-md bg-primary p-3 font-semibold text-primary-foreground shadow-sm"
                   >
                     <Send className="h-5 w-5" />
                     Send Parcel
@@ -187,18 +182,17 @@ export function Header() {
                   <Link 
                     to="/dashboard" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     My Orders
                   </Link>
                   
-                  {/* Rider Section */}
                   {isRider ? (
                     <Link 
                       to="/rider" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium"
+                      className="flex items-center gap-3 rounded-md bg-emerald-500/10 p-3 font-semibold text-emerald-700 dark:text-emerald-300"
                     >
                       <Bike className="h-5 w-5" />
                       Rider Dashboard
@@ -207,7 +201,7 @@ export function Header() {
                     <Link 
                       to="/become-rider" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors border border-dashed border-primary/50"
+                      className="flex items-center gap-3 rounded-md border border-dashed border-primary/50 p-3 transition-colors hover:bg-primary/10"
                     >
                       <Bike className="h-5 w-5 text-primary" />
                       <div>
@@ -222,7 +216,7 @@ export function Header() {
                   <Link 
                     to="/notifications" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Bell className="h-5 w-5" />
                     Notifications
@@ -234,7 +228,7 @@ export function Header() {
                   <Link 
                     to="/profile" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <User className="h-5 w-5" />
                     Profile
@@ -244,7 +238,7 @@ export function Header() {
                     <Link 
                       to="/admin" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 text-primary font-medium transition-colors hover:bg-primary/15"
+                      className="flex items-center gap-3 rounded-md bg-primary/10 p-3 font-semibold text-primary transition-colors hover:bg-primary/15"
                     >
                       <ShieldCheck className="h-5 w-5" />
                       Admin Panel
@@ -268,7 +262,7 @@ export function Header() {
                   <Link 
                     to="/" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Home className="h-5 w-5" />
                     Home
@@ -276,7 +270,7 @@ export function Header() {
                   <Link 
                     to="/become-rider" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Bike className="h-5 w-5" />
                     Become a Rider
@@ -285,7 +279,7 @@ export function Header() {
                   <Link 
                     to="/auth" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     Sign In
                   </Link>

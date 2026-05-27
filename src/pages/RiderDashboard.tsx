@@ -204,7 +204,7 @@ export default function RiderDashboard() {
   return (
     <MainLayout showFooter={false}>
       <div className="container py-6 md:py-8">
-        <section className="mb-6 overflow-hidden rounded-2xl border bg-card/80 shadow-sm backdrop-blur">
+        <section className="mb-6 overflow-hidden rounded-lg border bg-card/90 shadow-sm backdrop-blur">
           <div className="h-1 bg-gradient-to-r from-primary via-emerald-400 to-warning" />
           <div className="grid gap-5 p-5 lg:grid-cols-[1fr_320px] lg:p-6">
             <div className="space-y-5">
@@ -226,7 +226,7 @@ export default function RiderDashboard() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border bg-background/70 p-4">
+                <div className="stat-tile">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Queue</span>
                     <Activity className="h-4 w-4 text-primary" />
@@ -234,7 +234,7 @@ export default function RiderDashboard() {
                   <p className="text-2xl font-bold">{pendingQueue.length}</p>
                   <p className={`mt-1 text-xs font-medium ${demandTone}`}>{demandLabel}</p>
                 </div>
-                <div className="rounded-xl border bg-background/70 p-4">
+                <div className="stat-tile">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Current</span>
                     <Navigation className="h-4 w-4 text-primary" />
@@ -242,7 +242,7 @@ export default function RiderDashboard() {
                   <p className="text-2xl font-bold">{activeOrders.length}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Single delivery mode</p>
                 </div>
-                <div className="rounded-xl border bg-background/70 p-4">
+                <div className="stat-tile">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Average payout</span>
                     <Wallet className="h-4 w-4 text-primary" />
@@ -256,9 +256,9 @@ export default function RiderDashboard() {
               </div>
             </div>
 
-            <div className={`rounded-xl border p-4 ${rider.is_online ? "border-emerald-500/40 bg-emerald-500/10" : "bg-background/80"}`}>
+            <div className={`rounded-lg border p-4 ${rider.is_online ? "border-emerald-500/40 bg-emerald-500/10" : "bg-background/80"}`}>
               <div className="flex items-center gap-4">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${rider.is_online ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md ${rider.is_online ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
                   {isSavingStatus ? <Loader2 className="h-5 w-5 animate-spin" /> : <Power className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -293,7 +293,7 @@ export default function RiderDashboard() {
           </div>
         </section>
 
-        <section className="mb-6 rounded-2xl border bg-card/80 p-4 shadow-sm md:p-5">
+        <section className="mb-6 rounded-lg border bg-card/90 p-4 shadow-sm md:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -317,11 +317,11 @@ export default function RiderDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:min-w-[300px]">
-              <div className="rounded-xl border bg-background/70 p-3">
+              <div className="rounded-md border bg-background/80 p-3">
                 <p className="text-xs font-medium text-muted-foreground">Payout</p>
                 <p className="mt-1 text-xl font-bold">{formatRupees(focusPayout)}</p>
               </div>
-              <div className="rounded-xl border bg-background/70 p-3">
+              <div className="rounded-md border bg-background/80 p-3">
                 <p className="text-xs font-medium text-muted-foreground">Queue rank</p>
                 <p className="mt-1 text-xl font-bold">
                   {focusOrder && sortedAvailableOrders.length > 0 && activeOrders.length === 0 ? "Best" : activeOrders.length > 0 ? "Locked" : "Open"}
