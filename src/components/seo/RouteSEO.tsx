@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SITE_URL = 'https://droply-enhanced.vercel.app';
+const SITE_URL = 'https://droplix.vercel.app';
 
 type MetaConfig = {
   title: string;
@@ -11,18 +11,18 @@ type MetaConfig = {
 };
 
 const defaultMeta: MetaConfig = {
-  title: 'Droply | Same-Day Parcel Delivery in Mumbai',
+  title: 'Droplix | Same-Day Parcel Delivery in Mumbai',
   description:
-    'Book same-day parcel delivery in Mumbai with Droply. Send documents, gifts, food, clothes, and small packages with OTP handoff, live tracking, and clear pricing.',
+    'Book same-day parcel delivery in Mumbai with Droplix. Send documents, gifts, food, clothes, and small packages with OTP handoff, live tracking, and clear pricing.',
   canonical: `${SITE_URL}/`,
 };
 
 function getMetaForPath(pathname: string): MetaConfig {
   if (pathname === '/become-rider') {
     return {
-      title: 'Become a Droply Rider | Earn with Local Deliveries in Mumbai',
+      title: 'Become a Droplix Rider | Earn with Local Deliveries in Mumbai',
       description:
-        'Apply to become a Droply rider in Mumbai. Accept local parcel delivery requests, follow a verified delivery flow, and earn on your schedule.',
+        'Apply to become a Droplix rider in Mumbai. Accept local parcel delivery requests, follow a verified delivery flow, and earn on your schedule.',
       canonical: `${SITE_URL}/become-rider`,
     };
   }
@@ -31,7 +31,7 @@ function getMetaForPath(pathname: string): MetaConfig {
 
   return {
     ...defaultMeta,
-    title: 'Droply App | Secure Parcel Delivery Dashboard',
+    title: 'Droplix App | Secure Parcel Delivery Dashboard',
     canonical: `${SITE_URL}${pathname}`,
     robots: 'noindex, nofollow',
   };

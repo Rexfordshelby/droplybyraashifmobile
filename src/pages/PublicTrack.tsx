@@ -81,7 +81,7 @@ export default function PublicTrack() {
       window.clearTimeout(timeout);
 
       if (error) {
-        setBackendError('Tracking is not ready in Supabase yet. Run supabase/droply_full_schema.sql to create get_public_order.');
+        setBackendError('Tracking is not ready in Supabase yet. Run supabase/droplix_full_schema.sql to create get_public_order.');
         setLoading(false);
         return;
       }
@@ -196,7 +196,7 @@ export default function PublicTrack() {
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 flex items-center gap-2">
                 <Gift className="h-5 w-5 text-emerald-600 shrink-0" />
                 <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  This delivery is FREE — paid by Droply 🎁
+                  This delivery is FREE — paid by Droplix 🎁
                 </p>
               </div>
             )}
@@ -307,7 +307,7 @@ export default function PublicTrack() {
         )}
 
         <p className="text-xs text-center text-muted-foreground mt-6">
-          Real-time tracking powered by Droply.
+          Real-time tracking powered by Droplix.
         </p>
       </div>
     </MainLayout>

@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { QrCode, Download, Share2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Download, Loader2, QrCode, RefreshCcw, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Order } from '@/hooks/useOrders';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  createOrderQrDataUrl,
+  getOrderDisplayCode,
+  getQrFileName,
+  IssuedOrderQrToken,
+} from '@/lib/qrPayload';
 
 interface OrderQRCodeProps {
   order: Order;
@@ -20,37 +26,74 @@ interface OrderQRCodeProps {
 
 export function OrderQRCode({ order, type = 'pickup', showButton = true }: OrderQRCodeProps) {
   const [open, setOpen] = useState(false);
+  const [qrImage, setQrImage] = useState('');
+  const [qrError, setQrError] = useState('');
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
   const { toast } = useToast();
 
-  // Create QR data based on type
-  const qrData = type === 'pickup' 
-    ? JSON.stringify({
-        orderId: order.id,
-        type: 'pickup',
-        pickup: order.pickup_address,
-        item: order.item_description,
+  const displayCode = getOrderDisplayCode(order);
+
+  useEffect(() => {
+    if (showButton && !open) return;
+
+    let isMounted = true;
+    setQrError('');
+    setQrImage('');
+    setExpiresAt(null);
+
+    const generateQr = async () => {
+      let issuedToken: IssuedOrderQrToken | undefined;
+
+      if (type === 'pickup' || type === 'delivery') {
+        const { data, error } = await supabase.rpc('issue_order_qr_token', {
+          _order_id: order.id,
+          _token_type: type,
+          _ttl_seconds: 900,
+        });
+
+        if (error) throw error;
+        issuedToken = data as IssuedOrderQrToken;
+      }
+
+      const dataUrl = await createOrderQrDataUrl(order, type, issuedToken);
+
+      if (issuedToken?.expiresAt && isMounted) {
+        setExpiresAt(issuedToken.expiresAt);
+      }
+
+      return dataUrl;
+    };
+
+    generateQr()
+      .then((dataUrl) => {
+        if (isMounted) setQrImage(dataUrl);
       })
-    : JSON.stringify({
-        orderId: order.id,
-        type: 'delivery',
-        otp: order.delivery_otp,
-        drop: order.drop_address,
+      .catch((error) => {
+        console.error('QR generation failed:', error);
+        if (isMounted) {
+          setQrError(
+            type === 'pickup'
+              ? 'Could not issue a secure one-time pickup QR. Refresh the order and try again.'
+              : 'Could not generate this QR code. Try again.',
+          );
+        }
       });
 
-  const encodedData = encodeURIComponent(qrData);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedData}`;
+    return () => {
+      isMounted = false;
+    };
+  }, [open, order, refreshCount, showButton, type]);
 
   const handleDownload = async () => {
+    if (!qrImage) return;
+
     try {
-      const response = await fetch(qrUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `order-${order.id.slice(0, 8)}-${type}-qr.png`;
+      a.href = qrImage;
+      a.download = getQrFileName(order, type);
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast({
         title: 'Downloaded',
@@ -65,61 +108,57 @@ export function OrderQRCode({ order, type = 'pickup', showButton = true }: Order
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Order ${order.id.slice(0, 8).toUpperCase()} - ${type === 'pickup' ? 'Pickup' : 'Delivery'} QR`,
-          text: type === 'pickup' 
-            ? `Show this QR code to the rider at pickup` 
-            : `Delivery OTP: ${order.delivery_otp}`,
-          url: window.location.href,
-        });
-      } catch {
-        // User cancelled native share.
-      }
-    } else {
-      navigator.clipboard.writeText(type === 'delivery' ? order.delivery_otp || '' : order.id);
-      toast({
-        title: 'Copied',
-        description: type === 'delivery' ? 'OTP copied to clipboard' : 'Order ID copied to clipboard',
-      });
-    }
+  const handleRefresh = () => {
+    setRefreshCount((count) => count + 1);
   };
 
   const QRContent = () => (
     <div className="flex flex-col items-center space-y-4">
-      <div className="rounded-lg border bg-background p-4 shadow-lg">
-        <img 
-          src={qrUrl} 
-          alt={`${type} QR Code`}
-          className="w-48 h-48 md:w-64 md:h-64"
-          loading="lazy"
-        />
+      <div className="rounded-lg border bg-white p-4 shadow-lg">
+        {qrImage ? (
+          <img
+            src={qrImage}
+            alt={`${type} QR Code`}
+            className="h-48 w-48 md:h-64 md:w-64"
+          />
+        ) : (
+          <div className="flex h-48 w-48 items-center justify-center md:h-64 md:w-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
       </div>
       <div className="text-center space-y-1">
         <p className="text-sm font-medium">
-          Order #{order.id.slice(0, 8).toUpperCase()}
+          Order #{displayCode}
         </p>
-        {type === 'delivery' && order.delivery_otp && (
-          <p className="text-2xl font-bold font-mono tracking-widest text-primary">
-            OTP: {order.delivery_otp}
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          One-time secure QR
+        </div>
+        {qrError && (
+          <p className="text-xs font-medium text-destructive">
+            {qrError}
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          {type === 'pickup' 
-            ? 'Show this QR to the rider at pickup' 
+          {type === 'pickup'
+            ? 'Show this in person. It expires and cannot be reused after scan.'
             : 'Rider will verify this at delivery'}
         </p>
+        {expiresAt && (
+          <p className="text-[11px] text-muted-foreground">
+            Expires {new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        )}
       </div>
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={handleDownload}>
+        <Button variant="outline" size="sm" onClick={handleDownload} disabled={!qrImage}>
           <Download className="h-4 w-4 mr-2" />
           Download
         </Button>
-        <Button variant="outline" size="sm" onClick={handleShare}>
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
+        <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          New QR
         </Button>
       </div>
     </div>

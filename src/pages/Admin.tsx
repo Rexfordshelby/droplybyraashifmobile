@@ -404,7 +404,7 @@ export default function Admin() {
                 </Badge>
               </div>
               <h1 className="font-heading text-2xl font-bold tracking-normal text-foreground sm:text-4xl">
-                Droply operations
+                Droplix operations
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
                 Live coverage, rider readiness, and order flow for Mumbai operations.

@@ -45,8 +45,8 @@ export default function Receipt() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-8 max-w-lg">
-        <Button variant="ghost" asChild className="mb-6">
+      <div className="container max-w-4xl py-6 md:py-8">
+        <Button variant="ghost" asChild className="no-print mb-6">
           <Link to="/dashboard">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Orders

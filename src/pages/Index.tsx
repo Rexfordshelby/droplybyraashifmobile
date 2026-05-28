@@ -102,7 +102,7 @@ export default function Index() {
               Mumbai parcel delivery with cleaner control from booking to handoff.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Droply helps senders book quickly, riders follow a verified flow, and receivers confirm delivery with OTP tracking.
+              Droplix helps senders book quickly, riders follow a verified flow, and receivers confirm delivery with OTP tracking.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">

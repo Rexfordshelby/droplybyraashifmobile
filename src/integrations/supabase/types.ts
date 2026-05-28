@@ -62,6 +62,8 @@ export type Database = {
           created_at: string | null
           delivered_at: string | null
           delivery_otp: string | null
+          delivery_otp_failed_count: number
+          delivery_otp_locked_until: string | null
           delivery_proof_url: string | null
           distance_km: number | null
           drop_address: string
@@ -92,6 +94,8 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           delivery_otp?: string | null
+          delivery_otp_failed_count?: number
+          delivery_otp_locked_until?: string | null
           delivery_proof_url?: string | null
           distance_km?: number | null
           drop_address: string
@@ -122,6 +126,8 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           delivery_otp?: string | null
+          delivery_otp_failed_count?: number
+          delivery_otp_locked_until?: string | null
           delivery_proof_url?: string | null
           distance_km?: number | null
           drop_address?: string
@@ -150,6 +156,66 @@ export type Database = {
           {
             foreignKeyName: "orders_rider_id_fkey"
             columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_qr_tokens: {
+        Row: {
+          assigned_rider_id: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          order_id: string
+          revoked_at: string | null
+          token_hash: string
+          token_type: string
+          used_at: string | null
+          used_by: string | null
+          used_rider_id: string | null
+        }
+        Insert: {
+          assigned_rider_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          order_id: string
+          revoked_at?: string | null
+          token_hash: string
+          token_type: string
+          used_at?: string | null
+          used_by?: string | null
+          used_rider_id?: string | null
+        }
+        Update: {
+          assigned_rider_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          order_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_type?: string
+          used_at?: string | null
+          used_by?: string | null
+          used_rider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_qr_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_qr_tokens_assigned_rider_id_fkey"
+            columns: ["assigned_rider_id"]
             isOneToOne: false
             referencedRelation: "riders"
             referencedColumns: ["id"]
@@ -314,6 +380,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_order_qr_token: {
+        Args: { _order_id?: string | null; _token: string; _token_type?: string }
+        Returns: Json
+      }
       consume_free_delivery: { Args: { _user_id: string }; Returns: boolean }
       generate_tracking_code: { Args: never; Returns: string }
       get_public_order: { Args: { _code: string }; Returns: Json }
@@ -325,6 +395,14 @@ export type Database = {
         Returns: boolean
       }
       refund_free_delivery: { Args: { _user_id: string }; Returns: undefined }
+      issue_order_qr_token: {
+        Args: { _order_id: string; _token_type?: string; _ttl_seconds?: number }
+        Returns: Json
+      }
+      verify_delivery_otp: {
+        Args: { _order_id: string; _otp: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "rider" | "sender"

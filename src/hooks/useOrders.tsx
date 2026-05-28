@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { extractDeliveryOtp, extractOneTimeQrToken } from '@/lib/qrPayload';
 
 type SupabaseErrorLike = {
   code?: string;
@@ -54,6 +55,49 @@ export interface RiderInfo {
   };
 }
 
+export const ORDER_SELECT = `
+  id,
+  sender_id,
+  rider_id,
+  pickup_address,
+  pickup_landmark,
+  drop_address,
+  drop_landmark,
+  item_description,
+  item_photo_url,
+  sender_phone,
+  receiver_phone,
+  price_offered,
+  suggested_price,
+  distance_km,
+  status,
+  payment_method,
+  delivery_proof_url,
+  picked_at,
+  delivered_at,
+  cancelled_at,
+  cancellation_reason,
+  created_at,
+  updated_at,
+  is_promo_free,
+  platform_paid_amount,
+  sender_paid_amount,
+  tracking_code
+`;
+
+type OrderWithoutOtp = Omit<Order, 'delivery_otp'>;
+
+export function normalizeOrder(order: OrderWithoutOtp | Order): Order {
+  return {
+    ...order,
+    delivery_otp: null,
+  } as Order;
+}
+
+export function normalizeOrders(data: unknown): Order[] {
+  return ((data as OrderWithoutOtp[] | null) || []).map(normalizeOrder);
+}
+
 const describeCreateOrderError = (error: SupabaseErrorLike) => {
   const combined = [error.code, error.message, error.details, error.hint]
     .filter(Boolean)
@@ -77,7 +121,7 @@ const describeCreateOrderError = (error: SupabaseErrorLike) => {
   ) {
     return {
       title: 'Supabase setup needed',
-      description: 'Run supabase/droply_full_schema.sql in your Supabase SQL Editor, then refresh Droply.',
+      description: 'Run supabase/droplix_full_schema.sql in your Supabase SQL Editor, then refresh Droplix.',
     };
   }
 
@@ -111,10 +155,10 @@ export function useOrders() {
     if (hasRole('admin')) {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(ORDER_SELECT)
         .order('created_at', { ascending: false });
       if (error) console.error('Error fetching orders:', error);
-      else setOrders((data as Order[]) || []);
+      else setOrders(normalizeOrders(data));
       setLoading(false);
       return;
     }
@@ -138,7 +182,7 @@ export function useOrders() {
 
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
+      .select(ORDER_SELECT)
       .or(orParts.join(','))
       .order('created_at', { ascending: false });
 
@@ -147,7 +191,7 @@ export function useOrders() {
     } else {
       // De-dupe by id (sender_id and rider_id branches can overlap for self-deliveries)
       const seen = new Set<string>();
-      const deduped = ((data as Order[]) || []).filter(o => {
+      const deduped = normalizeOrders(data).filter(o => {
         if (seen.has(o.id)) return false;
         seen.add(o.id);
         return true;
@@ -278,7 +322,6 @@ export function useOrders() {
       .insert({
         ...insertData,
         sender_id: user.id,
-        delivery_otp: Math.floor(1000 + Math.random() * 9000).toString(),
         is_promo_free: isPromoFree,
         payment_method: 'cash',
         platform_paid_amount: platformPaid,
@@ -286,7 +329,7 @@ export function useOrders() {
         // Trigger `set_tracking_code` will replace this with a unique 8-char code.
         tracking_code: '',
       })
-      .select()
+      .select(ORDER_SELECT)
       .single();
 
     if (error) {
@@ -306,11 +349,13 @@ export function useOrders() {
     }
 
     // Best-effort photo upload after order is created
-    if (item_photo && data?.id) {
-      const url = await uploadOrderPhoto(item_photo, data.id);
+    const createdOrder = data ? normalizeOrder(data as OrderWithoutOtp) : null;
+
+    if (item_photo && createdOrder?.id) {
+      const url = await uploadOrderPhoto(item_photo, createdOrder.id);
       if (url) {
-        await supabase.from('orders').update({ item_photo_url: url }).eq('id', data.id);
-        data.item_photo_url = url;
+        await supabase.from('orders').update({ item_photo_url: url }).eq('id', createdOrder.id);
+        createdOrder.item_photo_url = url;
       }
     }
 
@@ -321,19 +366,11 @@ export function useOrders() {
         : 'Your parcel request is now live. Riders will see it instantly!',
     });
 
-    return data;
+    return createdOrder;
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, additionalData?: Partial<Order>) => {
     const updateData: Partial<Order> = { status, ...additionalData };
-
-    if (status === 'picked') {
-      updateData.picked_at = new Date().toISOString();
-    } else if (status === 'delivered') {
-      updateData.delivered_at = new Date().toISOString();
-    } else if (status === 'cancelled') {
-      updateData.cancelled_at = new Date().toISOString();
-    }
 
     const { error } = await supabase
       .from('orders')
@@ -363,6 +400,94 @@ export function useOrders() {
       description: statusMessages[status],
     });
 
+    return true;
+  };
+
+  const verifyPickupQrToken = async (orderId: string, rawCode: string): Promise<boolean> => {
+    const token = extractOneTimeQrToken(rawCode);
+    if (!token) {
+      toast({
+        title: 'Secure QR required',
+        description: 'Ask the sender to show the latest one-time pickup QR.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    const { error } = await supabase.rpc('consume_order_qr_token', {
+      _token: token,
+      _token_type: 'pickup',
+      _order_id: orderId,
+    });
+
+    if (error) {
+      toast({
+        title: 'Pickup not verified',
+        description: error.message || 'This QR may be expired, already used, or assigned to another rider.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    toast({
+      title: 'Pickup secured',
+      description: 'The one-time QR was consumed and the order was marked picked up.',
+    });
+    await fetchOrders();
+    return true;
+  };
+
+  const verifyDeliveryOtp = async (orderId: string, rawCode: string): Promise<boolean> => {
+    const token = extractOneTimeQrToken(rawCode);
+    const otp = extractDeliveryOtp(rawCode);
+
+    if (token) {
+      const { data, error } = await supabase.rpc('consume_order_qr_token', {
+        _token: token,
+        _token_type: 'delivery',
+        _order_id: orderId,
+      });
+      const result = data as { ok?: boolean; message?: string } | null;
+
+      if (error || result?.ok === false) {
+        toast({
+          title: 'Delivery not verified',
+          description: error?.message || result?.message || 'This delivery QR may be expired or already used.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    } else {
+      if (!otp) {
+        toast({
+          title: 'OTP required',
+          description: 'Enter the 4-digit OTP shown to the receiver.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      const { data, error } = await supabase.rpc('verify_delivery_otp', {
+        _order_id: orderId,
+        _otp: otp,
+      });
+      const result = data as { ok?: boolean; message?: string } | null;
+
+      if (error || result?.ok === false) {
+        toast({
+          title: 'Delivery not verified',
+          description: error?.message || result?.message || 'The OTP did not match this order.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    }
+
+    toast({
+      title: 'Delivery secured',
+      description: 'The receiver verification passed and the order was completed.',
+    });
+    await fetchOrders();
     return true;
   };
 
@@ -567,8 +692,9 @@ export function useOrders() {
                 hasRole('rider') ||
                 newOrder.sender_id === user?.id) {
               setOrders(prev => {
-                if (prev.some(o => o.id === newOrder.id)) return prev;
-                return [newOrder, ...prev];
+                const safeOrder = normalizeOrder(newOrder);
+                if (prev.some(o => o.id === safeOrder.id)) return prev;
+                return [safeOrder, ...prev];
               });
 
               // Sound + browser notif + toast for riders when new order appears
@@ -582,7 +708,7 @@ export function useOrders() {
               }
             }
           } else if (payload.eventType === 'UPDATE') {
-            const updatedOrder = payload.new as Order;
+            const updatedOrder = normalizeOrder(payload.new as Order);
             const oldOrder = payload.old as Order;
             const isMine = updatedOrder.sender_id === user?.id;
             let currentRiderId = riderIdRef.current;
@@ -662,6 +788,8 @@ export function useOrders() {
     loading,
     createOrder,
     updateOrderStatus,
+    verifyPickupQrToken,
+    verifyDeliveryOtp,
     acceptOrder,
     cancelOrder,
     getRiderInfo,

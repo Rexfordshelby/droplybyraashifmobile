@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Menu, User, LogOut, Send, Bike, Home, LayoutDashboard, ShieldCheck } from 'lucide-react';
-import { DroplyLogo } from '@/components/brand/DroplyLogo';
+import { DroplixLogo } from '@/components/brand/DroplixLogo';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ export function Header() {
       <div className="container flex h-[68px] items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <DroplyLogo size={36} wordmarkClassName="text-xl hidden sm:block" />
+            <DroplixLogo size={36} wordmarkClassName="text-xl hidden sm:block" />
           </Link>
 
           {user && (
@@ -164,7 +164,7 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="w-[300px] border-l bg-background p-5">
             <div className="flex items-center gap-2 mb-8">
-              <DroplyLogo size={36} wordmarkClassName="text-xl" />
+              <DroplixLogo size={36} wordmarkClassName="text-xl" />
             </div>
             
             <nav className="flex flex-col gap-2">

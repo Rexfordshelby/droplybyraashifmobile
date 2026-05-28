@@ -9,7 +9,7 @@ import { HelpCircle } from 'lucide-react';
 const FAQS = [
   {
     q: 'How do the 2 free deliveries work?',
-    a: 'Every new Droply user gets 2 deliveries on us. The sender pays ₹0; we pay the rider the normal fare on your behalf. The free credit is applied automatically on your first 2 orders.',
+    a: 'Every new Droplix user gets 2 deliveries on us. The sender pays ₹0; we pay the rider the normal fare on your behalf. The free credit is applied automatically on your first 2 orders.',
   },
   {
     q: 'How is the delivery price calculated?',
@@ -29,7 +29,7 @@ const FAQS = [
   },
   {
     q: 'How do I contact support?',
-    a: 'Tap the Help icon on the Rider Dashboard, or email support@droply.in. We respond within a few hours.',
+    a: 'Tap the Help icon on the Rider Dashboard, or email support@droplix.in. We respond within a few hours.',
   },
 ];
 

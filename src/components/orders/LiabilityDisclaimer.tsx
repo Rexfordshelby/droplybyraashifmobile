@@ -13,7 +13,7 @@ const guardrails = [
   'No loss/damage liability unless the rider is proven responsible',
   'Items above ₹20,000 are not supported',
   'Cash payments stay between sender and rider',
-  'Droply connects people; it is not a logistics company',
+  'Droplix connects people; it is not a logistics company',
 ];
 
 export function LiabilityDisclaimer({ accepted, onAcceptChange, highlight = false }: LiabilityDisclaimerProps) {
@@ -82,7 +82,7 @@ export function LiabilityDisclaimer({ accepted, onAcceptChange, highlight = fals
           className="mt-0.5"
         />
         <Label htmlFor="liability-accept" className="text-sm leading-relaxed cursor-pointer">
-          I understand that Droply is a peer-to-peer platform and I am sending items
+          I understand that Droplix is a peer-to-peer platform and I am sending items
           at my own risk. I confirm the item value is under ₹20,000 and agree to the terms above.
         </Label>
       </div>

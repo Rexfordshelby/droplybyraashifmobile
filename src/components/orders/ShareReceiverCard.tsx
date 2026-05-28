@@ -24,7 +24,7 @@ export function ShareReceiverCard({
   const { toast } = useToast();
   const url = buildTrackingUrl(trackingCode);
 
-  const message = `Hi! Your Droply parcel${itemDescription ? ` (${itemDescription})` : ''} is on the way. Track it live & get your delivery OTP here: ${url}`;
+  const message = `Hi! Your Droplix parcel${itemDescription ? ` (${itemDescription})` : ''} is on the way. Track it live & get your delivery OTP here: ${url}`;
 
   const handleCopy = async () => {
     try {

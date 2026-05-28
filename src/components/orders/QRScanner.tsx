@@ -16,17 +16,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 
 interface QRScannerProps {
-  onScan: (data: string) => void;
+  onScan: (data: string) => void | boolean | Promise<void | boolean>;
   type: 'pickup' | 'delivery';
-  /** Required for delivery: the 4-digit OTP that must match. */
-  expectedOtp?: string;
   /** Required for pickup: the order ID we expect inside the QR payload. */
   expectedOrderId?: string;
+  /** Optional public tracking code for manual pickup verification. */
+  expectedTrackingCode?: string;
   trigger?: React.ReactNode;
 }
 
 interface ParsedPayload {
   orderId?: string;
+  trackingCode?: string;
+  token?: string;
   otp?: string;
   type?: string;
   raw: string;
@@ -38,6 +40,8 @@ function parseScanPayload(raw: string): ParsedPayload {
     const parsed = JSON.parse(raw);
     return {
       orderId: parsed.orderId || parsed.order_id,
+      trackingCode: parsed.trackingCode || parsed.tracking_code,
+      token: parsed.token || parsed.qrToken,
       otp: parsed.otp,
       type: parsed.type,
       raw,
@@ -48,12 +52,13 @@ function parseScanPayload(raw: string): ParsedPayload {
   }
 }
 
-export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger }: QRScannerProps) {
+export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode, trigger }: QRScannerProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'manual' | 'camera'>('manual');
   const [manualValue, setManualValue] = useState('');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [scanFeedback, setScanFeedback] = useState<'idle' | 'success' | 'error'>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -75,22 +80,44 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
     setIsScanning(false);
   }, []);
 
+  const markRejected = useCallback(() => {
+    setScanFeedback('error');
+    cooldownUntilRef.current = Date.now() + 1500;
+    setTimeout(() => setScanFeedback('idle'), 1200);
+  }, []);
+
   const handleSuccess = useCallback(
-    (value: string) => {
+    async (value: string) => {
+      setIsVerifying(true);
+      let accepted = false;
+
+      try {
+        const result = await onScan(value);
+        accepted = result !== false;
+      } catch {
+        accepted = false;
+      } finally {
+        setIsVerifying(false);
+      }
+
+      if (!accepted) {
+        markRejected();
+        return;
+      }
+
       stopCamera();
       setScanFeedback('success');
       toast({
-        title: type === 'pickup' ? 'Pickup verified ✓' : 'Delivery verified ✓',
+        title: type === 'pickup' ? 'Pickup verified' : 'Delivery verified',
         description: type === 'pickup' ? 'Pickup confirmed.' : 'OTP matched. Marking as delivered.',
       });
-      onScan(value);
       setTimeout(() => {
         setOpen(false);
         setManualValue('');
         setScanFeedback('idle');
       }, 600);
     },
-    [onScan, stopCamera, toast, type],
+    [markRejected, onScan, stopCamera, toast, type],
   );
 
   const handleFailure = useCallback(
@@ -107,34 +134,26 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
     [toast, type],
   );
 
-  /** Strict validation — same rules for camera + manual. Returns true if matched. */
+  /** Strict validation: same rules for camera and manual entry. Returns true if matched. */
   const validateAndComplete = useCallback(
-    (rawInput: string, source: 'camera' | 'manual') => {
+    async (rawInput: string, source: 'camera' | 'manual') => {
       const value = rawInput.trim();
-      if (!value) return false;
+      if (!value || isVerifying) return false;
 
       if (type === 'delivery') {
-        if (!expectedOtp) {
-          handleFailure('No OTP set on this order. Please refresh.');
-          return false;
-        }
         const parsed = parseScanPayload(value);
         // Reject scans tagged for the wrong stage
         if (parsed.isJson && parsed.type && parsed.type !== 'delivery') {
           handleFailure('This QR is for pickup, not delivery.');
           return false;
         }
-        const candidate = parsed.otp || (/^\d{4}$/.test(value) ? value : '');
+        const candidate = parsed.token || parsed.otp || (/^\d{4}$/.test(value) ? value : '');
         if (!candidate) {
-          handleFailure('That QR does not contain a delivery OTP.');
+          handleFailure('Enter the receiver OTP or scan a secure delivery QR.');
           return false;
         }
-        if (candidate === expectedOtp) {
-          handleSuccess(candidate);
-          return true;
-        }
-        handleFailure('That OTP does not match this order.');
-        return false;
+        await handleSuccess(value);
+        return true;
       }
 
       // pickup
@@ -148,24 +167,40 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
         return false;
       }
       const candidateOrderId = (parsed.orderId || value).trim();
+      const candidateTrackingCode = (parsed.trackingCode || value).trim();
       const expectedFull = expectedOrderId.toLowerCase();
       const expectedShort = expectedOrderId.slice(0, 8).toLowerCase();
+      const expectedTracking = expectedTrackingCode?.toLowerCase();
       const cand = candidateOrderId.toLowerCase();
-      const matches = cand === expectedFull || cand === expectedShort;
+      const candTracking = candidateTrackingCode.toLowerCase();
+      const matches =
+        cand === expectedFull ||
+        cand === expectedShort ||
+        (!!expectedTracking && candTracking === expectedTracking);
 
-      if (matches) {
-        handleSuccess(candidateOrderId);
-        return true;
-      }
-      // Avoid spamming the same wrong-QR toast every frame
-      if (source === 'camera' && lastRejectedRef.current === cand) {
+      if (!matches && parsed.isJson) {
+        handleFailure('This QR is not for this order.');
         return false;
       }
-      lastRejectedRef.current = cand;
-      handleFailure('This QR is not for this order.');
-      return false;
+
+      if (parsed.isJson && !parsed.token) {
+        handleFailure('Ask the sender to reopen the secure pickup QR. Old codes cannot be used.');
+        return false;
+      }
+
+      if (!parsed.isJson && !/^[a-zA-Z0-9_-]{32,}$/.test(value)) {
+        if (source === 'camera' && lastRejectedRef.current === value.toLowerCase()) {
+          return false;
+        }
+        lastRejectedRef.current = value.toLowerCase();
+        handleFailure('Scan the secure pickup QR. Public order codes cannot verify pickup.');
+        return false;
+      }
+
+      await handleSuccess(value);
+      return true;
     },
-    [expectedOrderId, expectedOtp, handleFailure, handleSuccess, type],
+    [expectedOrderId, expectedTrackingCode, handleFailure, handleSuccess, isVerifying, type],
   );
 
   const tick = useCallback(() => {
@@ -174,7 +209,7 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
-    if (Date.now() < cooldownUntilRef.current) {
+    if (isVerifying || Date.now() < cooldownUntilRef.current) {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
@@ -198,7 +233,7 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
       if (matched) return; // stopCamera already called inside handleSuccess
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [validateAndComplete]);
+  }, [isVerifying, validateAndComplete]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
@@ -255,6 +290,7 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
       stopCamera();
       setManualValue('');
       setScanFeedback('idle');
+      setIsVerifying(false);
       setActiveTab('manual');
       lastRejectedRef.current = '';
       cooldownUntilRef.current = 0;
@@ -264,9 +300,9 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
   const manualLabel =
-    type === 'pickup' ? 'Enter Order ID (8 characters)' : 'Enter 4-digit Delivery OTP';
-  const manualPlaceholder = type === 'pickup' ? 'e.g. A1B2C3D4' : '0000';
-  const manualMaxLength = type === 'delivery' ? 4 : 36;
+    type === 'pickup' ? 'Paste secure pickup token' : 'Enter 4-digit Delivery OTP';
+  const manualPlaceholder = type === 'pickup' ? 'Scan QR preferred' : '0000';
+  const manualMaxLength = type === 'delivery' ? 4 : 128;
   const manualPattern = type === 'delivery' ? '\\d*' : undefined;
   const manualInputMode: 'numeric' | 'text' = type === 'delivery' ? 'numeric' : 'text';
 
@@ -314,13 +350,13 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
                 onChange={(e) => {
                   let v = e.target.value;
                   if (type === 'delivery') v = v.replace(/\D/g, '');
-                  else v = v.toUpperCase();
+                  else v = v.trim();
                   setManualValue(v);
                 }}
                 inputMode={manualInputMode}
                 pattern={manualPattern}
                 maxLength={manualMaxLength}
-                className="text-center text-2xl font-mono tracking-widest h-14"
+                className="text-center text-2xl font-mono tracking-normal h-14"
                 autoFocus
               />
               {type === 'delivery' && (
@@ -333,12 +369,18 @@ export function QRScanner({ onScan, type, expectedOtp, expectedOrderId, trigger 
               onClick={() => validateAndComplete(manualValue, 'manual')}
               className="w-full h-11"
               disabled={
+                isVerifying ||
                 !manualValue.trim() ||
                 (type === 'delivery' && manualValue.length !== 4)
               }
             >
-              Verify {type === 'pickup' ? 'Pickup' : 'Delivery'}
+              {isVerifying ? 'Verifying...' : `Verify ${type === 'pickup' ? 'Pickup' : 'Delivery'}`}
             </Button>
+            {type === 'pickup' && (
+              <p className="text-xs text-muted-foreground text-center">
+                For security, public tracking codes cannot confirm pickup. Scan the one-time QR.
+              </p>
+            )}
           </TabsContent>
 
           <TabsContent value="camera" className="pt-4">

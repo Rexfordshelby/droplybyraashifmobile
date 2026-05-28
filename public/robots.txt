@@ -11,4 +11,4 @@ Disallow: /track/
 Disallow: /t/
 Disallow: /auth
 
-Sitemap: https://droply-enhanced.vercel.app/sitemap.xml
+Sitemap: https://droplix.vercel.app/sitemap.xml

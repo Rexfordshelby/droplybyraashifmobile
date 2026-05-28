@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, Lock, User, Zap } from 'lucide-react';
-import { DroplyLogo } from '@/components/brand/DroplyLogo';
+import { DroplixLogo } from '@/components/brand/DroplixLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,7 +86,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center cozy-gradient p-4">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <DroplyLogo size={44} wordmarkClassName="text-2xl" />
+          <DroplixLogo size={44} wordmarkClassName="text-2xl" />
         </Link>
 
         <Card className="glass-card animate-scale-in">

@@ -18,7 +18,7 @@ if (!password) {
 }
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sqlPath = path.join(projectRoot, 'supabase', 'droply_full_schema.sql');
+const sqlPath = path.join(projectRoot, 'supabase', 'droplix_full_schema.sql');
 const schemaSql = await readFile(sqlPath, 'utf8');
 
 const client = new Client({
@@ -58,7 +58,7 @@ try {
     select tablename
     from pg_tables
     where schemaname = 'public'
-      and tablename in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'notifications')
+      and tablename in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'order_qr_tokens', 'notifications')
     order by tablename
   `)).rows.map((row) => row.tablename);
 
@@ -77,7 +77,10 @@ try {
         'refund_free_delivery',
         'enforce_order_promos',
         'enforce_rider_operational_rules',
-        'apply_order_defaults_and_flow'
+        'apply_order_defaults_and_flow',
+        'issue_order_qr_token',
+        'consume_order_qr_token',
+        'verify_delivery_otp'
       )
     order by p.proname
   `)).rows.map((row) => row.proname);
@@ -87,7 +90,7 @@ try {
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
-      and relname in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'notifications')
+      and relname in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'order_qr_tokens', 'notifications')
     order by relname
   `)).rows;
 
@@ -95,7 +98,7 @@ try {
     select count(*)::int as count
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'notifications')
+      and tablename in ('profiles', 'user_roles', 'user_promos', 'riders', 'service_zones', 'orders', 'order_qr_tokens', 'notifications')
   `)).rows[0].count);
 
   checks.orderTriggers = (await client.query(`
@@ -166,7 +169,7 @@ try {
           $1,
           'authenticated',
           'authenticated',
-          'codex-db-check@droply.local',
+          'codex-db-check@droplix.local',
           '',
           now(),
           '{"provider":"email","providers":["email"]}'::jsonb,

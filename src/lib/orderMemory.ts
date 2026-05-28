@@ -1,4 +1,4 @@
-const KEY = 'droply:order_memory';
+const KEY = 'droplix:order_memory';
 const MAX_ITEMS = 5;
 
 export interface OrderMemory {

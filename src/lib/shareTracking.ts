@@ -13,12 +13,12 @@ export function buildTrackingUrl(code: string): string {
 export async function shareTrackingLink(code: string, itemDescription?: string): Promise<'shared' | 'copied' | 'failed'> {
   const url = buildTrackingUrl(code);
   const text = itemDescription
-    ? `Track your delivery (${itemDescription}) on Droply: ${url}`
-    : `Track your delivery on Droply: ${url}`;
+    ? `Track your delivery (${itemDescription}) on Droplix: ${url}`
+    : `Track your delivery on Droplix: ${url}`;
 
   if (typeof navigator !== 'undefined' && 'share' in navigator) {
     try {
-      await navigator.share({ title: 'Droply Tracking', text, url });
+      await navigator.share({ title: 'Droplix Tracking', text, url });
       return 'shared';
     } catch (err) {
       // User cancelled — fall through to clipboard

@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import type { Order, OrderStatus } from './useOrders';
+import { ORDER_SELECT, normalizeOrders, type Order, type OrderStatus } from './useOrders';
 
 interface Profile {
   id: string;
@@ -89,7 +89,7 @@ export function useAdminData() {
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
+      .select(ORDER_SELECT)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -97,7 +97,7 @@ export function useAdminData() {
       return [];
     }
 
-    return data as Order[];
+    return normalizeOrders(data);
   }, []);
 
   const fetchZones = useCallback(async () => {

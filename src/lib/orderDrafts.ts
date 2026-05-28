@@ -1,6 +1,6 @@
 import type { Order } from '@/hooks/useOrders';
 
-const KEY = 'droply:order_draft';
+const KEY = 'droplix:order_draft';
 
 export interface OrderDraft {
   pickup_address: string;

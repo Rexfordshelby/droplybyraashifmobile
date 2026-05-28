@@ -282,7 +282,7 @@ export function CreateOrderForm() {
   const CurrentStepIcon = currentStepMeta.icon;
   const canSubmitOrder = liabilityAccepted && !priceTooLow && !itemBlocked;
   const submitHelpText = itemBlocked
-    ? 'This item cannot be sent through Droply. Check the item description and declared value before booking.'
+    ? 'This item cannot be sent through Droplix. Check the item description and declared value before booking.'
     : priceTooLow
     ? `Offer at least ₹${minimumPrice} so riders see a fair payout.`
     : !liabilityAccepted
@@ -348,7 +348,7 @@ export function CreateOrderForm() {
     }
 
     if (itemBlocked) {
-      const message = 'This item is blocked or too risky for Droply. Please change the item description.';
+      const message = 'This item is blocked or too risky for Droplix. Please change the item description.';
       setSubmitError(message);
       toast({
         title: 'Item not supported',
@@ -396,7 +396,7 @@ export function CreateOrderForm() {
         return;
       }
 
-      setSubmitError('The order was not created. If this is a fresh Supabase project, run supabase/droply_full_schema.sql and try again.');
+      setSubmitError('The order was not created. If this is a fresh Supabase project, run supabase/droplix_full_schema.sql and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -764,7 +764,7 @@ export function CreateOrderForm() {
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
                             {itemValue > 20000
-                              ? 'Droply only supports items declared under ₹20,000.'
+                              ? 'Droplix only supports items declared under ₹20,000.'
                               : itemSafety.description}
                           </p>
                         </div>
@@ -960,7 +960,7 @@ export function CreateOrderForm() {
                         <p className="text-sm text-muted-foreground line-through">Normal price ₹{minimumPrice}</p>
                         <p className="my-2 text-5xl font-bold text-emerald-600">₹0</p>
                         <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Promo applied. This delivery is free.</p>
-                        <p className="mt-2 text-xs text-muted-foreground">Droply pays ₹{minimumPrice} to the rider on your behalf.</p>
+                        <p className="mt-2 text-xs text-muted-foreground">Droplix pays ₹{minimumPrice} to the rider on your behalf.</p>
                       </div>
                     ) : (
                       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm animate-slide-up stagger-1">

@@ -56,7 +56,16 @@ function getRiderNextAction(status?: string) {
 export default function RiderDashboard() {
   const { user, loading: authLoading, hasRole } = useAuth();
   const { rider, loading: riderLoading, toggleOnlineStatus } = useRider();
-  const { orders, loading: ordersLoading, acceptOrder, updateOrderStatus, cancelOrder, uploadDeliveryProof } = useOrders();
+  const {
+    orders,
+    loading: ordersLoading,
+    acceptOrder,
+    updateOrderStatus,
+    verifyPickupQrToken,
+    verifyDeliveryOtp,
+    cancelOrder,
+    uploadDeliveryProof,
+  } = useOrders();
   const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [queueSort, setQueueSort] = useState<QueueSort>("recommended");
@@ -91,7 +100,7 @@ export default function RiderDashboard() {
     return sum + Number(order.sender_paid_amount || (!order.is_promo_free ? order.price_offered : 0));
   }, 0);
 
-  const droplyCoveredEarnings = deliveredToday.reduce((sum, order) => {
+  const droplixCoveredEarnings = deliveredToday.reduce((sum, order) => {
     return sum + Number(order.platform_paid_amount || (order.is_promo_free ? order.price_offered : 0));
   }, 0);
 
@@ -362,7 +371,7 @@ export default function RiderDashboard() {
                 <IndianRupee className="h-5 w-5" />
                 {todayEarnings}
               </p>
-              <p className="text-xs text-muted-foreground">Cash plus Droply-covered orders</p>
+              <p className="text-xs text-muted-foreground">Cash plus Droplix-covered orders</p>
             </CardContent>
           </Card>
           <Card className="card-elevated">
@@ -377,8 +386,8 @@ export default function RiderDashboard() {
                   <span className="font-semibold">₹{cashEarnings}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Droply</span>
-                  <span className="font-semibold">₹{droplyCoveredEarnings}</span>
+                  <span className="text-muted-foreground">Droplix</span>
+                  <span className="font-semibold">₹{droplixCoveredEarnings}</span>
                 </div>
               </div>
             </CardContent>
@@ -401,6 +410,8 @@ export default function RiderDashboard() {
                   order={order}
                   isRider
                   onUpdateStatus={(status) => updateOrderStatus(order.id, status)}
+                  onVerifyPickup={(rawCode) => verifyPickupQrToken(order.id, rawCode)}
+                  onVerifyDelivery={(rawCode) => verifyDeliveryOtp(order.id, rawCode)}
                   onCancel={(reason) => cancelOrder(order.id, reason)}
                   onUploadProof={(file) => uploadDeliveryProof(order.id, file)}
                 />

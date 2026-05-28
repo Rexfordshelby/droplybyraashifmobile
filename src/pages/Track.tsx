@@ -66,7 +66,7 @@ export default function Track() {
     );
   }
 
-  const showPickupCode = order.status === "accepted" || order.status === "picked";
+  const showPickupCode = order.status === "accepted";
 
   return (
     <MainLayout showFooter={false}>
@@ -145,7 +145,7 @@ export default function Track() {
                     <p className="text-xs text-muted-foreground">Payment</p>
                     <p className="font-medium flex items-center">
                       <IndianRupee className="h-4 w-4" />
-                      {order.is_promo_free ? "0 covered by Droply" : `${order.price_offered} cash`}
+                      {order.is_promo_free ? "0 covered by Droplix" : `${order.price_offered} cash`}
                     </p>
                   </div>
                 </div>

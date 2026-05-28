@@ -1,6 +1,6 @@
 {
-  "name": "Droply",
-  "short_name": "Droply",
+  "name": "Droplix",
+  "short_name": "Droplix",
   "description": "Same-day parcel delivery in Mumbai with live tracking and OTP handoff.",
   "start_url": "/",
   "scope": "/",
@@ -9,7 +9,7 @@
   "theme_color": "#0f929d",
   "icons": [
     {
-      "src": "/droply-logo.png",
+      "src": "/droplix-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

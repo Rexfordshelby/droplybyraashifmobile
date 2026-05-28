@@ -27,6 +27,8 @@ interface OrderCardProps {
   onAccept?: () => Promise<boolean>;
   onDeny?: () => void;
   onUpdateStatus?: (status: OrderStatus) => void;
+  onVerifyPickup?: (rawCode: string) => Promise<boolean>;
+  onVerifyDelivery?: (rawCode: string) => Promise<boolean>;
   onCancel?: (reason: string) => Promise<boolean>;
   onUploadProof?: (file: File) => Promise<boolean>;
   isRider?: boolean;
@@ -59,6 +61,8 @@ export function OrderCard({
   onAccept,
   onDeny,
   onUpdateStatus,
+  onVerifyPickup,
+  onVerifyDelivery,
   onCancel,
   onUploadProof,
   isRider = false,
@@ -97,11 +101,14 @@ export function OrderCard({
   const mapsUrl = (address: string) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
-  // QRScanner only invokes onScan AFTER strict validation, so it's safe to advance here.
-  const handleQRVerification = (_data: string) => {
-    if (!onUpdateStatus) return;
-    if (order.status === 'accepted') onUpdateStatus('picked');
-    else if (order.status === 'in_transit') onUpdateStatus('delivered');
+  const handlePickupVerification = async (data: string) => {
+    if (onVerifyPickup) return onVerifyPickup(data);
+    return false;
+  };
+
+  const handleDeliveryVerification = async (data: string) => {
+    if (onVerifyDelivery) return onVerifyDelivery(data);
+    return false;
   };
 
   const handleAccept = async () => {
@@ -177,9 +184,10 @@ export function OrderCard({
               Ask the customer to show their pickup QR or read out the Order ID.
             </p>
             <QRScanner
-              onScan={handleQRVerification}
+              onScan={handlePickupVerification}
               type="pickup"
               expectedOrderId={order.id}
+              expectedTrackingCode={order.tracking_code}
               trigger={
                 <Button className="w-full btn-gradient h-12 text-base">
                   <QrCode className="h-5 w-5 mr-2" />
@@ -199,7 +207,7 @@ export function OrderCard({
           <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 flex items-start gap-3">
             <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">Pickup confirmed ✓</p>
+              <p className="font-semibold text-sm">Pickup confirmed</p>
               <p className="text-xs text-muted-foreground">Item with you. Now head to the drop point.</p>
             </div>
           </div>
@@ -305,9 +313,8 @@ export function OrderCard({
               )}
             </div>
             <QRScanner
-              onScan={handleQRVerification}
+              onScan={handleDeliveryVerification}
               type="delivery"
-              expectedOtp={order.delivery_otp || undefined}
               trigger={
                 <Button className="w-full btn-gradient h-12 text-base">
                   <QrCode className="h-5 w-5 mr-2" />
@@ -535,8 +542,8 @@ export function OrderCard({
             </div>
           )}
 
-          {/* Sender: pickup QR — only useful until rider has picked up. Hide once in_transit. */}
-          {!isRider && (order.status === 'accepted' || order.status === 'picked') && (
+          {/* Sender: pickup QR is one-time and only valid before pickup is confirmed. */}
+          {!isRider && order.status === 'accepted' && (
             <div className="pt-3 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2">
                 Show this to the rider at pickup
