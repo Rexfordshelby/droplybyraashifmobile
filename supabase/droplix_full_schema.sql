@@ -1394,8 +1394,8 @@ grant execute on function public.verify_delivery_otp(uuid, text) to authenticate
 
 do $$
 declare
-  -- Optional bootstrap admin for fresh projects. Replace this with your admin account email before running.
-  bootstrap_admin_email constant text := 'admin@droplix.app';
+  -- Optional bootstrap admin for fresh projects.
+  bootstrap_admin_email constant text := 'raashifshaikh70@gmail.com';
   bootstrap_admin_id uuid;
 begin
   select id
