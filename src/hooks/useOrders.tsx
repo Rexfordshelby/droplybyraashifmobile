@@ -3,6 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { extractDeliveryOtp, extractOneTimeQrToken } from '@/lib/qrPayload';
+import { showNativeNotification } from '@/lib/mobileNotifications';
+import {
+  getFallbackTrustProfile,
+  type DeliveryPriority,
+  type ProtectionTier,
+  type RiderTrustProfile,
+  type SupportChannel,
+} from '@/lib/trustFeatures';
 
 type SupabaseErrorLike = {
   code?: string;
@@ -31,6 +39,8 @@ export interface Order {
   status: OrderStatus;
   payment_method: string;
   delivery_proof_url: string | null;
+  pickup_proof_url: string | null;
+  transit_photo_url: string | null;
   delivery_otp: string | null;
   picked_at: string | null;
   delivered_at: string | null;
@@ -42,6 +52,22 @@ export interface Order {
   platform_paid_amount: number;
   sender_paid_amount: number;
   tracking_code: string;
+  protection_tier: ProtectionTier;
+  protection_fee: number;
+  protection_coverage: number;
+  fare_locked: boolean;
+  fare_locked_amount: number;
+  delivery_priority: DeliveryPriority;
+  priority_fee: number;
+  scheduled_for: string | null;
+  business_order: boolean;
+  business_name: string | null;
+  multi_stop_count: number;
+  trusted_rider_required: boolean;
+  support_channel: SupportChannel;
+  estimated_eta_minutes: number | null;
+  eta_confidence: number | null;
+  guarantee_credit_amount: number;
 }
 
 export interface RiderInfo {
@@ -49,6 +75,7 @@ export interface RiderInfo {
   user_id: string;
   vehicle_type: string;
   is_online: boolean;
+  trust: RiderTrustProfile;
   profile?: {
     full_name: string | null;
     phone: string | null;
@@ -73,6 +100,8 @@ export const ORDER_SELECT = `
   status,
   payment_method,
   delivery_proof_url,
+  pickup_proof_url,
+  transit_photo_url,
   picked_at,
   delivered_at,
   cancelled_at,
@@ -82,7 +111,23 @@ export const ORDER_SELECT = `
   is_promo_free,
   platform_paid_amount,
   sender_paid_amount,
-  tracking_code
+  tracking_code,
+  protection_tier,
+  protection_fee,
+  protection_coverage,
+  fare_locked,
+  fare_locked_amount,
+  delivery_priority,
+  priority_fee,
+  scheduled_for,
+  business_order,
+  business_name,
+  multi_stop_count,
+  trusted_rider_required,
+  support_channel,
+  estimated_eta_minutes,
+  eta_confidence,
+  guarantee_credit_amount
 `;
 
 type OrderWithoutOtp = Omit<Order, 'delivery_otp'>;
@@ -91,6 +136,24 @@ export function normalizeOrder(order: OrderWithoutOtp | Order): Order {
   return {
     ...order,
     delivery_otp: null,
+    pickup_proof_url: order.pickup_proof_url ?? null,
+    transit_photo_url: order.transit_photo_url ?? null,
+    protection_tier: order.protection_tier ?? 'basic',
+    protection_fee: Number(order.protection_fee ?? 0),
+    protection_coverage: Number(order.protection_coverage ?? 0),
+    fare_locked: order.fare_locked ?? true,
+    fare_locked_amount: Number(order.fare_locked_amount ?? order.sender_paid_amount ?? order.price_offered ?? 0),
+    delivery_priority: order.delivery_priority ?? 'standard',
+    priority_fee: Number(order.priority_fee ?? 0),
+    scheduled_for: order.scheduled_for ?? null,
+    business_order: order.business_order ?? false,
+    business_name: order.business_name ?? null,
+    multi_stop_count: Number(order.multi_stop_count ?? 1),
+    trusted_rider_required: order.trusted_rider_required ?? false,
+    support_channel: order.support_channel ?? 'whatsapp',
+    estimated_eta_minutes: order.estimated_eta_minutes ?? null,
+    eta_confidence: order.eta_confidence ?? null,
+    guarantee_credit_amount: Number(order.guarantee_credit_amount ?? 20),
   } as Order;
 }
 
@@ -144,6 +207,12 @@ export function useOrders() {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const riderIdRef = useRef<string | null>(null);
+  const [hasRiderProfile, setHasRiderProfile] = useState(false);
+
+  useEffect(() => {
+    riderIdRef.current = null;
+    setHasRiderProfile(false);
+  }, [user?.id]);
 
   const fetchOrders = useCallback(async () => {
     if (!user) {
@@ -163,19 +232,22 @@ export function useOrders() {
       return;
     }
 
-    // Resolve rider id (if any) so a user who is BOTH sender and rider sees both buckets.
-    if (hasRole('rider') && !riderIdRef.current) {
+    // Resolve rider id (if any) so rider dashboards still work even if the role cache is stale.
+    if (!riderIdRef.current) {
       const { data: riderData } = await supabase
         .from('riders')
         .select('id')
         .eq('user_id', user.id)
+        .eq('status', 'approved')
         .maybeSingle();
       riderIdRef.current = riderData?.id || null;
+      setHasRiderProfile(Boolean(riderIdRef.current));
     }
 
     // Build a single OR query covering: my own sent orders + (if rider) pending + assigned-to-me orders.
     const orParts: string[] = [`sender_id.eq.${user.id}`];
-    if (hasRole('rider')) {
+    const canUseRiderQueue = hasRole('rider') || Boolean(riderIdRef.current);
+    if (canUseRiderQueue) {
       orParts.push('status.eq.pending');
       if (riderIdRef.current) orParts.push(`rider_id.eq.${riderIdRef.current}`);
     }
@@ -288,6 +360,41 @@ export function useOrders() {
     return true;
   };
 
+  const uploadTransitProof = async (orderId: string, file: File): Promise<boolean> => {
+    if (!user) return false;
+
+    const url = await uploadOrderPhoto(file, `transit-${orderId}-${Date.now()}`);
+    if (!url) {
+      toast({
+        title: 'Transit photo failed',
+        description: 'Could not upload the parcel-in-transit photo. Try again.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ transit_photo_url: url })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({
+        title: 'Transit photo not saved',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    toast({
+      title: 'Transit proof added',
+      description: 'The parcel photo chain now includes an in-transit photo.',
+    });
+
+    return true;
+  };
+
   const createOrder = async (orderData: {
     pickup_address: string;
     pickup_landmark?: string;
@@ -301,6 +408,24 @@ export function useOrders() {
     distance_km?: number;
     is_promo_free?: boolean;
     item_photo?: File | null;
+    protection_tier?: ProtectionTier;
+    protection_fee?: number;
+    protection_coverage?: number;
+    fare_locked?: boolean;
+    fare_locked_amount?: number;
+    delivery_priority?: DeliveryPriority;
+    priority_fee?: number;
+    scheduled_for?: string | null;
+    business_order?: boolean;
+    business_name?: string | null;
+    multi_stop_count?: number;
+    trusted_rider_required?: boolean;
+    support_channel?: SupportChannel;
+    estimated_eta_minutes?: number | null;
+    eta_confidence?: number | null;
+    guarantee_credit_amount?: number;
+    sender_paid_amount?: number;
+    platform_paid_amount?: number;
   }) => {
     if (!user) {
       toast({
@@ -312,8 +437,9 @@ export function useOrders() {
     }
 
     const isPromoFree = !!orderData.is_promo_free;
-    const platformPaid = isPromoFree ? orderData.price_offered : 0;
-    const senderPaid = isPromoFree ? 0 : orderData.price_offered;
+    const addOnFee = Number(orderData.protection_fee || 0) + Number(orderData.priority_fee || 0);
+    const platformPaid = orderData.platform_paid_amount ?? (isPromoFree ? orderData.price_offered : 0);
+    const senderPaid = orderData.sender_paid_amount ?? (isPromoFree ? addOnFee : orderData.price_offered + addOnFee);
 
     const { item_photo, ...insertData } = orderData;
 
@@ -326,6 +452,22 @@ export function useOrders() {
         payment_method: 'cash',
         platform_paid_amount: platformPaid,
         sender_paid_amount: senderPaid,
+        protection_tier: orderData.protection_tier ?? 'basic',
+        protection_fee: orderData.protection_fee ?? 0,
+        protection_coverage: orderData.protection_coverage ?? 0,
+        fare_locked: orderData.fare_locked ?? true,
+        fare_locked_amount: orderData.fare_locked_amount ?? senderPaid,
+        delivery_priority: orderData.delivery_priority ?? 'standard',
+        priority_fee: orderData.priority_fee ?? 0,
+        scheduled_for: orderData.scheduled_for ?? null,
+        business_order: orderData.business_order ?? false,
+        business_name: orderData.business_name ?? null,
+        multi_stop_count: orderData.multi_stop_count ?? 1,
+        trusted_rider_required: orderData.trusted_rider_required ?? false,
+        support_channel: orderData.support_channel ?? 'whatsapp',
+        estimated_eta_minutes: orderData.estimated_eta_minutes ?? null,
+        eta_confidence: orderData.eta_confidence ?? null,
+        guarantee_credit_amount: orderData.guarantee_credit_amount ?? 20,
         // Trigger `set_tracking_code` will replace this with a unique 8-char code.
         tracking_code: '',
       })
@@ -610,6 +752,26 @@ export function useOrders() {
 
     if (error || !data) return null;
 
+    const { data: trustData } = await supabase.rpc('get_rider_trust_profile', {
+      _rider_id: riderId,
+    });
+    const trust =
+      trustData && typeof trustData === 'object'
+        ? getFallbackTrustProfile({
+            trustScore: Number((trustData as Record<string, unknown>).trust_score ?? 0) || undefined,
+            rating: Number((trustData as Record<string, unknown>).rating ?? 0) || undefined,
+            completedDeliveries: Number((trustData as Record<string, unknown>).completed_deliveries ?? 0),
+            onTimeRate: Number((trustData as Record<string, unknown>).on_time_rate ?? 0) || undefined,
+            cancellationRate: Number((trustData as Record<string, unknown>).cancellation_rate ?? 0),
+            damageIncidents: Number((trustData as Record<string, unknown>).damage_incidents ?? 0),
+            repeatCustomerRate: Number((trustData as Record<string, unknown>).repeat_customer_rate ?? 0) || undefined,
+            trustTier: ((trustData as Record<string, unknown>).trust_tier as RiderTrustProfile['trustTier']) ?? undefined,
+            reviewTags: Array.isArray((trustData as Record<string, unknown>).review_tags)
+              ? ((trustData as Record<string, unknown>).review_tags as string[])
+              : undefined,
+          })
+        : getFallbackTrustProfile();
+
     // Get profile info
     const { data: profile } = await supabase
       .from('profiles')
@@ -619,6 +781,7 @@ export function useOrders() {
 
     return {
       ...data,
+      trust,
       profile: profile || undefined,
     };
   };
@@ -646,8 +809,17 @@ export function useOrders() {
     }
   }, []);
 
-  // Best-effort browser notification (rider only)
-  const notifyRiderOfNewOrder = useCallback((order: Order) => {
+  // Best-effort Android native notification first, then browser notification.
+  const notifyRiderOfNewOrder = useCallback(async (order: Order) => {
+    const sentNative = await showNativeNotification({
+      title: 'New delivery available',
+      body: `Rs ${order.price_offered} - ${order.pickup_address.substring(0, 60)}`,
+      tag: `order-${order.id}`,
+      route: '/rider',
+      orderId: order.id,
+    });
+    if (sentNative) return;
+
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission === 'granted') {
       try {
@@ -667,10 +839,11 @@ export function useOrders() {
   // Set up real-time subscription + polling fallback
   useEffect(() => {
     fetchOrders();
+    const canUseRiderQueue = hasRole('rider') || hasRiderProfile || Boolean(riderIdRef.current);
 
     // Polling fallback (every 5s) so riders still get orders even if realtime is delayed
     let pollTimer: ReturnType<typeof setInterval> | null = null;
-    if (user && hasRole('rider')) {
+    if (user && canUseRiderQueue) {
       pollTimer = setInterval(() => {
         fetchOrders();
       }, 5000);
@@ -688,8 +861,9 @@ export function useOrders() {
             const newOrder = payload.new as Order;
 
             // Only add if relevant to this user
+            const isRiderAccount = hasRole('rider') || hasRiderProfile || Boolean(riderIdRef.current);
             if (hasRole('admin') ||
-                hasRole('rider') ||
+                isRiderAccount ||
                 newOrder.sender_id === user?.id) {
               setOrders(prev => {
                 const safeOrder = normalizeOrder(newOrder);
@@ -698,9 +872,9 @@ export function useOrders() {
               });
 
               // Sound + browser notif + toast for riders when new order appears
-              if (hasRole('rider') && newOrder.status === 'pending') {
+              if (isRiderAccount && newOrder.status === 'pending') {
                 playNewOrderBeep();
-                notifyRiderOfNewOrder(newOrder);
+                void notifyRiderOfNewOrder(newOrder);
                 toast({
                   title: '🆕 New Order Available!',
                   description: `₹${newOrder.price_offered} - ${newOrder.pickup_address.substring(0, 30)}...`,
@@ -712,24 +886,27 @@ export function useOrders() {
             const oldOrder = payload.old as Order;
             const isMine = updatedOrder.sender_id === user?.id;
             let currentRiderId = riderIdRef.current;
-            if (hasRole('rider') && !currentRiderId && user?.id) {
+            const isRiderAccount = hasRole('rider') || hasRiderProfile || Boolean(currentRiderId);
+            if (isRiderAccount && !currentRiderId && user?.id) {
               const { data: riderData } = await supabase
                 .from('riders')
                 .select('id')
                 .eq('user_id', user.id)
+                .eq('status', 'approved')
                 .maybeSingle();
               currentRiderId = riderData?.id || null;
               riderIdRef.current = currentRiderId;
+              setHasRiderProfile(Boolean(currentRiderId));
             }
             const isAssignedToMe =
-              hasRole('rider') &&
+              isRiderAccount &&
               currentRiderId &&
               updatedOrder.rider_id === currentRiderId;
 
             setOrders(prev => {
               // Pending → accepted by someone else: only drop if I'm a rider AND not the sender AND not the assigned rider.
               if (oldOrder.status === 'pending' && updatedOrder.status === 'accepted') {
-                if (hasRole('rider') && !isAssignedToMe && !isMine) {
+                if (isRiderAccount && !isAssignedToMe && !isMine) {
                   return prev.filter(o => o.id !== updatedOrder.id);
                 }
               }
@@ -764,6 +941,13 @@ export function useOrders() {
               };
               
               if (updatedOrder.status !== 'pending' && updatedOrder.status !== 'accepted') {
+                void showNativeNotification({
+                  title: 'Droplix order update',
+                  body: statusMessages[updatedOrder.status],
+                  tag: `order-status-${updatedOrder.id}-${updatedOrder.status}`,
+                  route: `/track/${updatedOrder.id}`,
+                  orderId: updatedOrder.id,
+                });
                 toast({
                   title: 'Order Update',
                   description: statusMessages[updatedOrder.status],
@@ -781,7 +965,7 @@ export function useOrders() {
       if (pollTimer) clearInterval(pollTimer);
       supabase.removeChannel(channel);
     };
-  }, [user, hasRole, fetchOrders, toast, playNewOrderBeep, notifyRiderOfNewOrder]);
+  }, [user, hasRole, hasRiderProfile, fetchOrders, toast, playNewOrderBeep, notifyRiderOfNewOrder]);
 
   return {
     orders,
@@ -796,5 +980,6 @@ export function useOrders() {
     refetch: fetchOrders,
     uploadOrderPhoto,
     uploadDeliveryProof,
+    uploadTransitProof,
   };
 }

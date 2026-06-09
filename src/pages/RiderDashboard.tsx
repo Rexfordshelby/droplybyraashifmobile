@@ -65,6 +65,7 @@ export default function RiderDashboard() {
     verifyDeliveryOtp,
     cancelOrder,
     uploadDeliveryProof,
+    uploadTransitProof,
   } = useOrders();
   const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [isSavingStatus, setIsSavingStatus] = useState(false);
@@ -106,21 +107,24 @@ export default function RiderDashboard() {
 
   const averagePayout = deliveredToday.length ? Math.round(todayEarnings / deliveredToday.length) : 0;
 
+  const ownPendingOrders = useMemo(() => {
+    return orders.filter((order) => order.status === "pending" && order.sender_id === user?.id);
+  }, [orders, user?.id]);
+
   const pendingQueue = useMemo(() => {
     return orders.filter((order) => order.status === "pending" && order.sender_id !== user?.id);
   }, [orders, user?.id]);
 
-  const availableOrders = useMemo(() => {
-    if (!rider?.is_online || activeOrders.length > 0) return [];
+  const visibleQueueOrders = useMemo(() => {
     return orders.filter((order) => (
       order.status === "pending" &&
       order.sender_id !== user?.id &&
       !skippedIds.has(order.id)
     ));
-  }, [activeOrders.length, orders, rider?.is_online, skippedIds, user?.id]);
+  }, [orders, skippedIds, user?.id]);
 
   const sortedAvailableOrders = useMemo(() => {
-    const items = [...availableOrders];
+    const items = [...visibleQueueOrders];
 
     return items.sort((a, b) => {
       if (queueSort === "payout") {
@@ -139,7 +143,7 @@ export default function RiderDashboard() {
       const bScore = Number(b.price_offered || 0) / Math.max(Number(b.distance_km || 1), 1);
       return bScore - aScore;
     });
-  }, [availableOrders, queueSort]);
+  }, [visibleQueueOrders, queueSort]);
 
   const focusOrder = activeOrders[0] ?? sortedAvailableOrders[0] ?? null;
   const focusPayout = focusOrder
@@ -414,6 +418,7 @@ export default function RiderDashboard() {
                   onVerifyDelivery={(rawCode) => verifyDeliveryOtp(order.id, rawCode)}
                   onCancel={(reason) => cancelOrder(order.id, reason)}
                   onUploadProof={(file) => uploadDeliveryProof(order.id, file)}
+                  onUploadTransitProof={(file) => uploadTransitProof(order.id, file)}
                 />
               ))}
             </div>
@@ -425,11 +430,15 @@ export default function RiderDashboard() {
             <div>
               <h2 className="font-heading text-xl font-semibold">Available orders</h2>
               <p className="text-sm text-muted-foreground">
-                {canAccept ? "Choose a pending order and head to pickup." : "Go online and finish active deliveries to unlock more orders."}
+                {canAccept
+                  ? "Choose a pending order and head to pickup."
+                  : visibleQueueOrders.length > 0
+                    ? "Orders are visible. Go online or complete your active delivery to accept one."
+                    : "Go online when you are ready. Waiting orders will appear here."}
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              {canAccept && availableOrders.length > 1 && (
+              {visibleQueueOrders.length > 1 && (
                 <Select value={queueSort} onValueChange={(value) => setQueueSort(value as QueueSort)}>
                   <SelectTrigger className="h-9 w-full sm:w-[180px]">
                     <SelectValue />
@@ -443,40 +452,66 @@ export default function RiderDashboard() {
                 </Select>
               )}
               <Badge variant={canAccept ? "default" : "secondary"} className="w-fit">
-                {canAccept ? `${availableOrders.length} available` : "Not accepting"}
+                {canAccept ? `${visibleQueueOrders.length} available` : `${visibleQueueOrders.length} visible`}
               </Badge>
             </div>
           </div>
 
-          {!rider.is_online ? (
-            <Card className="border-dashed bg-muted/30">
-              <CardContent className="p-8">
-                <EmptyState
-                  variant="deliveries"
-                  title="You are offline"
-                  description="Switch online when you are ready to receive nearby delivery requests."
-                />
+          {ownPendingOrders.length > 0 && (
+            <Card className="mb-4 border-amber-500/35 bg-amber-500/10">
+              <CardContent className="flex gap-3 p-4">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+                <div>
+                  <p className="font-semibold">Your sender order is waiting for another rider</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {ownPendingOrders.length} pending order{ownPendingOrders.length === 1 ? "" : "s"} were created from this account. They are not shown as acceptable jobs for the same rider account to prevent self-assignment fraud.
+                  </p>
+                </div>
               </CardContent>
             </Card>
-          ) : activeOrders.length > 0 ? (
+          )}
+
+          {!rider.is_online && visibleQueueOrders.length > 0 && (
+            <Card className="mb-4 border-primary/25 bg-primary/5">
+              <CardContent className="flex gap-3 p-4">
+                <Power className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-semibold">Orders are visible. Go online to accept.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    The queue stays visible now, but Accept is locked until your rider switch is online.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeOrders.length > 0 && visibleQueueOrders.length > 0 && (
             <Card className="border-primary/30 bg-primary/5">
               <CardContent className="p-5 flex gap-3">
                 <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold">Single delivery mode is active</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    This keeps the rider flow simple and prevents missed pickups. Complete your current delivery to see more orders.
+                    The waiting queue is visible, but accepting is locked until you complete your current delivery.
                   </p>
                 </div>
               </CardContent>
             </Card>
-          ) : availableOrders.length === 0 ? (
+          )}
+
+          {visibleQueueOrders.length === 0 ? (
             <Card className="border-dashed bg-muted/30">
               <CardContent className="p-8">
                 <EmptyState
                   variant="search"
-                  title="No orders waiting"
-                  description="You are online. New orders will appear here automatically."
+                  title={ownPendingOrders.length > 0 ? "No acceptable orders for this rider" : "No orders waiting"}
+                  description={
+                    ownPendingOrders.length > 0
+                      ? "Use a different approved rider account to accept orders created by this account."
+                      : rider.is_online
+                        ? "You are online. New orders will appear here automatically."
+                        : "You are offline, but any waiting orders will still be visible here."
+                  }
                 >
                   <div className="mt-2 text-xs text-muted-foreground flex items-center justify-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
@@ -492,15 +527,15 @@ export default function RiderDashboard() {
                   key={order.id}
                   order={order}
                   isRider
-                  onAccept={() => acceptOrder(order.id)}
-                  onDeny={() => setSkippedIds((prev) => new Set(prev).add(order.id))}
+                  onAccept={canAccept ? () => acceptOrder(order.id) : undefined}
+                  onDeny={canAccept ? () => setSkippedIds((prev) => new Set(prev).add(order.id)) : undefined}
                 />
               ))}
             </div>
           )}
         </section>
 
-        {skippedIds.size > 0 && rider.is_online && activeOrders.length === 0 && (
+        {skippedIds.size > 0 && (
           <div className="mt-5 text-center">
             <Button variant="ghost" onClick={() => setSkippedIds(new Set())}>
               <PackageSearch className="h-4 w-4 mr-2" />

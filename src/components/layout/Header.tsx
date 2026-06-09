@@ -38,7 +38,8 @@ export function Header() {
       <div className="container flex h-[68px] items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <DroplixLogo size={36} wordmarkClassName="text-xl hidden sm:block" />
+            <DroplixLogo variant="mark" size={34} className="sm:hidden" />
+            <DroplixLogo size={40} className="hidden sm:inline-flex" />
           </Link>
 
           {user && (
@@ -164,7 +165,7 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="w-[300px] border-l bg-background p-5">
             <div className="flex items-center gap-2 mb-8">
-              <DroplixLogo size={36} wordmarkClassName="text-xl" />
+              <DroplixLogo size={42} />
             </div>
             
             <nav className="flex flex-col gap-2">

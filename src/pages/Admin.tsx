@@ -202,6 +202,9 @@ export default function Admin() {
   const cancelledOrders = orders.filter((order) => order.status === 'cancelled');
   const platformCovered = orders.reduce((sum, order) => sum + Number(order.platform_paid_amount ?? 0), 0);
   const collectedAmount = orders.reduce((sum, order) => sum + Number(order.sender_paid_amount ?? order.price_offered ?? 0), 0);
+  const protectedOrders = orders.filter((order) => order.protection_tier !== 'basic');
+  const priorityTrustOrders = orders.filter((order) => order.delivery_priority !== 'standard' || order.trusted_rider_required);
+  const businessOrders = orders.filter((order) => order.business_order);
   const conversionRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
   const queueHealth = stats.pendingOrders + stats.pendingRiders;
 
@@ -495,6 +498,20 @@ export default function Admin() {
                 value={formatCurrency(collectedAmount)}
                 hint={`${formatCurrency(platformCovered)} promo covered`}
                 icon={CircleDollarSign}
+              />
+              <MetricCard
+                title="Protected orders"
+                value={protectedOrders.length}
+                hint={`${priorityTrustOrders.length} priority or trusted-rider bookings`}
+                icon={ShieldCheck}
+                tone={protectedOrders.length > 0 ? 'success' : 'default'}
+              />
+              <MetricCard
+                title="Business runs"
+                value={businessOrders.length}
+                hint="bulk, invoice-ready, or multi-stop orders"
+                icon={ClipboardList}
+                tone={businessOrders.length > 0 ? 'warning' : 'default'}
               />
             </div>
 

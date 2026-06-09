@@ -24,6 +24,35 @@ interface OrderQRCodeProps {
   showButton?: boolean;
 }
 
+const describeQrIssueError = (error: unknown, type: 'pickup' | 'delivery') => {
+  const message = error instanceof Error ? error.message : String(error || '');
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes('gen_random_bytes') || normalized.includes('digest')) {
+    return 'Secure QR service needs the latest Supabase migration. Ask admin to run the QR crypto fix.';
+  }
+
+  if (normalized.includes('only the sender')) {
+    return type === 'pickup'
+      ? 'Only the sender account can issue this pickup QR.'
+      : 'Only the sender account can issue this delivery QR.';
+  }
+
+  if (normalized.includes('after a rider accepts')) {
+    return 'Pickup QR unlocks after a rider accepts this order.';
+  }
+
+  if (normalized.includes('assigned rider')) {
+    return 'Pickup QR needs an assigned rider first.';
+  }
+
+  if (message) return message;
+
+  return type === 'pickup'
+    ? 'Could not issue a secure one-time pickup QR. Refresh the order and try again.'
+    : 'Could not generate this QR code. Try again.';
+};
+
 export function OrderQRCode({ order, type = 'pickup', showButton = true }: OrderQRCodeProps) {
   const [open, setOpen] = useState(false);
   const [qrImage, setQrImage] = useState('');
@@ -72,11 +101,7 @@ export function OrderQRCode({ order, type = 'pickup', showButton = true }: Order
       .catch((error) => {
         console.error('QR generation failed:', error);
         if (isMounted) {
-          setQrError(
-            type === 'pickup'
-              ? 'Could not issue a secure one-time pickup QR. Refresh the order and try again.'
-              : 'Could not generate this QR code. Try again.',
-          );
+          setQrError(describeQrIssueError(error, type));
         }
       });
 

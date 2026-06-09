@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   MapPin, Clock, IndianRupee, Phone, Receipt, QrCode, X, Check, Loader2,
   Navigation, Eye, Gift, RotateCcw, Share2, CheckCircle2, ArrowRight, Package,
-  Camera,
+  Building2, CalendarClock, Camera, Flame, ShieldCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveOrderDraft } from '@/lib/orderDrafts';
 import { shareTrackingLink, buildTrackingUrl } from '@/lib/shareTracking';
 import { ShareReceiverCard } from './ShareReceiverCard';
+import { getProtectionLabel } from '@/lib/trustFeatures';
 
 interface OrderCardProps {
   order: Order;
@@ -31,6 +32,7 @@ interface OrderCardProps {
   onVerifyDelivery?: (rawCode: string) => Promise<boolean>;
   onCancel?: (reason: string) => Promise<boolean>;
   onUploadProof?: (file: File) => Promise<boolean>;
+  onUploadTransitProof?: (file: File) => Promise<boolean>;
   isRider?: boolean;
 }
 
@@ -65,12 +67,14 @@ export function OrderCard({
   onVerifyDelivery,
   onCancel,
   onUploadProof,
+  onUploadTransitProof,
   isRider = false,
 }: OrderCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [isUploadingTransit, setIsUploadingTransit] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const prevStatus = useRef<OrderStatus>(order.status);
@@ -137,8 +141,29 @@ export function OrderCard({
     setIsUploadingProof(false);
   };
 
+  const handleTransitUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !onUploadTransitProof) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Photo too large',
+        description: 'Choose a transit photo under 5 MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingTransit(true);
+    await onUploadTransitProof(file);
+    setIsUploadingTransit(false);
+  };
+
   const isActiveOrder = !['delivered', 'cancelled'].includes(order.status);
   const currentStageIdx = stageOrder.indexOf(order.status);
+  const priorityIcon = order.delivery_priority === 'emergency' ? Flame : CalendarClock;
+  const PriorityIcon = priorityIcon;
 
   // ============ RIDER STAGE PANEL ============
   const renderRiderStage = () => {
@@ -181,7 +206,7 @@ export function OrderCard({
               <p className="font-semibold text-sm">Verify pickup</p>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              Ask the customer to show their pickup QR or read out the Order ID.
+              Ask the customer to show the one-time pickup QR. Public order IDs are only for tracking.
             </p>
             <QRScanner
               onScan={handlePickupVerification}
@@ -191,7 +216,7 @@ export function OrderCard({
               trigger={
                 <Button className="w-full btn-gradient h-12 text-base">
                   <QrCode className="h-5 w-5 mr-2" />
-                  Scan pickup code
+                  Scan pickup QR
                 </Button>
               }
             />
@@ -228,13 +253,48 @@ export function OrderCard({
                   Navigate
                 </a>
               </Button>
-              {order.receiver_phone && (
-                <Button variant="outline" size="sm" asChild className="h-10">
-                  <a href={`tel:${order.receiver_phone}`}>
-                    <Phone className="h-4 w-4 mr-1.5 text-primary" />
-                    Call receiver
-                  </a>
-                </Button>
+            {order.receiver_phone && (
+              <Button variant="outline" size="sm" asChild className="h-10">
+                <a href={`tel:${order.receiver_phone}`}>
+                  <Phone className="h-4 w-4 mr-1.5 text-primary" />
+                  Call receiver
+                </a>
+              </Button>
+            )}
+            </div>
+            <div className="mt-3 rounded-lg border bg-background/70 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Transit photo</p>
+                  <p className="text-xs text-muted-foreground">
+                    {order.transit_photo_url ? 'Parcel-in-transit photo attached.' : 'Optional proof for protected or business parcels.'}
+                  </p>
+                </div>
+                {order.transit_photo_url && (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={order.transit_photo_url} target="_blank" rel="noopener noreferrer">
+                      View
+                    </a>
+                  </Button>
+                )}
+              </div>
+              {onUploadTransitProof && (
+                <label className="mt-3 flex h-10 cursor-pointer items-center justify-center rounded-md border bg-card text-sm font-medium transition-colors hover:bg-muted">
+                  {isUploadingTransit ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="mr-2 h-4 w-4" />
+                  )}
+                  {order.transit_photo_url ? 'Replace transit photo' : 'Add transit photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    disabled={isUploadingTransit}
+                    onChange={handleTransitUpload}
+                  />
+                </label>
               )}
             </div>
             <Button
@@ -367,6 +427,37 @@ export function OrderCard({
         </CardHeader>
 
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-primary">
+              <ShieldCheck className="h-3 w-3" />
+              {getProtectionLabel(order.protection_tier)}
+            </Badge>
+            {order.fare_locked && (
+              <Badge variant="outline" className="gap-1">
+                <IndianRupee className="h-3 w-3" />
+                Fare locked
+              </Badge>
+            )}
+            {order.delivery_priority !== 'standard' && (
+              <Badge variant="outline" className="gap-1 capitalize">
+                <PriorityIcon className="h-3 w-3" />
+                {order.delivery_priority}
+              </Badge>
+            )}
+            {order.trusted_rider_required && (
+              <Badge variant="outline" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Trusted rider
+              </Badge>
+            )}
+            {order.business_order && (
+              <Badge variant="outline" className="gap-1">
+                <Building2 className="h-3 w-3" />
+                {order.multi_stop_count > 1 ? `${order.multi_stop_count} stops` : 'Business'}
+              </Badge>
+            )}
+          </div>
+
           {/* Stage indicator (rider, active orders) */}
           {isRider && currentStageIdx >= 0 && order.status !== 'delivered' && (
             <div className="flex items-center gap-1.5">
@@ -481,6 +572,35 @@ export function OrderCard({
               </div>
             )}
           </div>
+
+          {!isRider && (order.item_photo_url || order.transit_photo_url || order.delivery_proof_url) && (
+            <div className="rounded-lg border bg-background/70 p-3">
+              <div className="mb-3 flex items-center gap-2">
+                <Camera className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold">Verified parcel photo chain</p>
+              </div>
+              <div className="grid gap-2 text-xs sm:grid-cols-3">
+                {[
+                  { label: 'Pickup photo', url: order.item_photo_url },
+                  { label: 'Transit photo', url: order.transit_photo_url },
+                  { label: 'Delivery photo', url: order.delivery_proof_url },
+                ].map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.url || undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`rounded-md border p-2 transition-colors ${
+                      item.url ? 'bg-card hover:bg-muted' : 'pointer-events-none bg-muted/30 text-muted-foreground'
+                    }`}
+                  >
+                    <p className="font-semibold">{item.label}</p>
+                    <p className="mt-0.5">{item.url ? 'Available' : 'Pending'}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Stage panel for active rider orders */}
           {isRider && isActiveOrder && order.status !== 'pending' && (

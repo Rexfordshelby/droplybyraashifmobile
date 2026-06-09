@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { AlertTriangle, Loader2, Package, Bike, Gift, ArrowLeft, KeyRound, Wallet } from 'lucide-react';
+import {
+  AlertTriangle,
+  Loader2,
+  Package,
+  Bike,
+  Gift,
+  ArrowLeft,
+  KeyRound,
+  Wallet,
+  Camera,
+  CalendarClock,
+  Flame,
+  ShieldCheck,
+  IndianRupee,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +23,7 @@ import { OrderTimeline } from '@/components/orders/OrderTimeline';
 import { isSupabaseConfigured, supabase } from '@/integrations/supabase/client';
 import { OrderStatus } from '@/hooks/useOrders';
 import { formatDistanceToNow } from 'date-fns';
+import { getProtectionLabel, type DeliveryPriority, type ProtectionTier, type SupportChannel } from '@/lib/trustFeatures';
 
 interface PublicOrder {
   id: string;
@@ -20,8 +35,22 @@ interface PublicOrder {
   drop_landmark: string | null;
   item_description: string;
   item_photo_url: string | null;
+  transit_photo_url: string | null;
+  delivery_proof_url: string | null;
   distance_km: number | null;
   price_offered: number | null;
+  fare_locked_amount: number | null;
+  protection_tier: ProtectionTier | null;
+  protection_coverage: number | null;
+  protection_fee: number | null;
+  delivery_priority: DeliveryPriority | null;
+  priority_fee: number | null;
+  scheduled_for: string | null;
+  trusted_rider_required: boolean | null;
+  support_channel: SupportChannel | null;
+  estimated_eta_minutes: number | null;
+  eta_confidence: number | null;
+  guarantee_credit_amount: number | null;
   payment_method: string | null;
   is_promo_free: boolean;
   created_at: string;
@@ -200,6 +229,47 @@ export default function PublicTrack() {
                 </p>
               </div>
             )}
+
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="rounded-lg border bg-background/70 p-3">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  Protection
+                </div>
+                <p className="text-sm font-semibold">{getProtectionLabel(order.protection_tier)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {order.protection_coverage ? `up to Rs ${order.protection_coverage}` : 'QR + OTP proof'}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-background/70 p-3">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  {order.delivery_priority === 'emergency' ? (
+                    <Flame className="h-3.5 w-3.5 text-amber-600" />
+                  ) : (
+                    <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                  )}
+                  Timing
+                </div>
+                <p className="text-sm font-semibold capitalize">{order.delivery_priority || 'standard'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {order.scheduled_for
+                    ? new Date(order.scheduled_for).toLocaleString()
+                    : order.eta_confidence && order.estimated_eta_minutes
+                      ? `${order.eta_confidence}% in ${order.estimated_eta_minutes} min`
+                      : 'Live updates'}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-background/70 p-3">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <IndianRupee className="h-3.5 w-3.5 text-primary" />
+                  Locked fare
+                </div>
+                <p className="text-sm font-semibold">Rs {order.fare_locked_amount ?? order.price_offered ?? 0}</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {order.support_channel || 'whatsapp'} support
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -278,6 +348,32 @@ export default function PublicTrack() {
                 loading="lazy"
               />
             )}
+            <div className="rounded-lg border bg-background/70 p-3">
+              <div className="mb-3 flex items-center gap-2">
+                <Camera className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold">Verified photo chain</p>
+              </div>
+              <div className="grid gap-2 text-xs sm:grid-cols-3">
+                {[
+                  { label: 'Pickup', url: order.item_photo_url },
+                  { label: 'Transit', url: order.transit_photo_url },
+                  { label: 'Delivery', url: order.delivery_proof_url },
+                ].map((proof) => (
+                  <a
+                    key={proof.label}
+                    href={proof.url || undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`rounded-md border p-2 transition-colors ${
+                      proof.url ? 'bg-card hover:bg-muted' : 'pointer-events-none bg-muted/30 text-muted-foreground'
+                    }`}
+                  >
+                    <p className="font-semibold">{proof.label}</p>
+                    <p className="mt-0.5">{proof.url ? 'Photo available' : 'Pending'}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
             {!order.is_promo_free && order.price_offered != null && (
               <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 text-sm">
                 <Wallet className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0" />

@@ -7,6 +7,7 @@ import {
   Gift,
   Hash,
   IndianRupee,
+  Mail,
   MapPin,
   Package,
   Printer,
@@ -22,6 +23,10 @@ import { Separator } from '@/components/ui/separator';
 import { Order } from '@/hooks/useOrders';
 import { useToast } from '@/hooks/use-toast';
 import { createOrderQrDataUrl, getOrderDisplayCode } from '@/lib/qrPayload';
+import { getProtectionLabel } from '@/lib/trustFeatures';
+import { DROPLIX_SUPPORT_EMAIL, DROPLIX_SUPPORT_MAILTO } from '@/lib/contact';
+import { DroplixLogo } from '@/components/brand/DroplixLogo';
+import { DROPLIX_LOGO_SRC } from '@/lib/brandAssets';
 
 interface OrderReceiptProps {
   order: Order;
@@ -67,11 +72,25 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
 
   const receiptCode = getOrderDisplayCode(order);
   const basePrice = Number(order.suggested_price || order.price_offered || 0);
-  const totalAmount = order.is_promo_free
-    ? 0
-    : Number(order.sender_paid_amount || order.price_offered || 0);
-  const riderPayout = Number(order.platform_paid_amount || basePrice || 0);
+  const deliveryFee = Number(order.price_offered || basePrice || 0);
+  const protectionFee = Number(order.protection_fee || 0);
+  const priorityFee = Number(order.priority_fee || 0);
+  const lockedFare = Number(order.fare_locked_amount || order.sender_paid_amount || deliveryFee + protectionFee + priorityFee);
+  const totalAmount = Number(order.sender_paid_amount ?? (order.is_promo_free ? protectionFee + priorityFee : lockedFare));
+  const riderPayout = Number(order.platform_paid_amount || deliveryFee || 0);
+  const protectionCoverage = Number(order.protection_coverage || 0);
+  const protectionLabel = getProtectionLabel(order.protection_tier);
   const deliveryDate = safeFormatDate(order.delivered_at || order.updated_at, 'PPP p');
+  const supportHref = `${DROPLIX_SUPPORT_MAILTO}?subject=${encodeURIComponent(`Droplix receipt ${receiptCode}`)}`;
+  const receiptLogoUrl = useMemo(() => {
+    if (typeof window === 'undefined') return DROPLIX_LOGO_SRC;
+    return new URL(DROPLIX_LOGO_SRC, window.location.origin).href;
+  }, []);
+  const proofItems = [
+    { label: 'Pickup photo', url: order.pickup_proof_url },
+    { label: 'Transit photo', url: order.transit_photo_url },
+    { label: 'Delivery proof', url: order.delivery_proof_url },
+  ];
 
   const shareText = useMemo(
     () =>
@@ -79,10 +98,12 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
         `Droplix receipt #${receiptCode}`,
         `Status: ${order.status.replace('_', ' ')}`,
         `Amount paid: ${money(totalAmount)}`,
+        `Locked fare: ${money(lockedFare)}`,
         `Pickup: ${order.pickup_address}`,
         `Drop: ${order.drop_address}`,
+        `Support: ${DROPLIX_SUPPORT_EMAIL}`,
       ].join('\n'),
-    [order.drop_address, order.pickup_address, order.status, receiptCode, totalAmount],
+    [lockedFare, order.drop_address, order.pickup_address, order.status, receiptCode, totalAmount],
   );
 
   useEffect(() => {
@@ -108,6 +129,13 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
     const qrImage = receiptQrUrl
       ? `<img src="${receiptQrUrl}" alt="Receipt QR" style="width:112px;height:112px;border:1px solid #dbe3ea;border-radius:10px;padding:8px;background:#fff;" />`
       : '';
+    const proofLinks = proofItems
+      .map((item) =>
+        item.url
+          ? `<div class="row"><span>${escapeHtml(item.label)}</span><a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">View proof</a></div>`
+          : `<div class="row"><span>${escapeHtml(item.label)}</span><strong>Pending</strong></div>`,
+      )
+      .join('');
 
     return `<!doctype html>
 <html>
@@ -118,6 +146,8 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
     body { margin: 0; background: #f5f7f8; color: #1f2937; font-family: Arial, sans-serif; }
     .receipt { max-width: 760px; margin: 32px auto; background: #fff; border: 1px solid #dbe3ea; border-radius: 14px; overflow: hidden; }
     .header { background: #0f8ea0; color: #fff; padding: 26px; display: flex; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand img { width: 118px; height: auto; border-radius: 10px; background: #fff; padding: 6px; }
     .title { font-size: 26px; font-weight: 800; margin: 0 0 6px; }
     .muted { color: #667085; }
     .header .muted { color: #d9f4f7; }
@@ -130,6 +160,7 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
     .row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eef2f5; }
     .row:last-child { border-bottom: 0; }
     .route { display: grid; gap: 14px; }
+    a { color: #0f8ea0; font-weight: 700; }
     .footer { padding: 18px 26px 26px; color: #667085; font-size: 12px; text-align: center; }
     @media print {
       body { background: #fff; }
@@ -140,13 +171,17 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
 <body>
   <main class="receipt">
     <section class="header">
-      <div>
-        <p class="title">Delivery Receipt</p>
-        <div class="muted">Receipt #${escapeHtml(receiptCode)}</div>
+      <div class="brand">
+        <img src="${escapeHtml(receiptLogoUrl)}" alt="Droplix logo" />
+        <div>
+          <p class="title">Delivery Receipt</p>
+          <div class="muted">Receipt #${escapeHtml(receiptCode)}</div>
+        </div>
       </div>
       <div style="text-align:right;">
         <strong>${escapeHtml(status)}</strong>
         <div class="muted">${escapeHtml(safeFormatDate(order.created_at, 'PPP'))}</div>
+        <div class="muted">${escapeHtml(DROPLIX_SUPPORT_EMAIL)}</div>
       </div>
     </section>
     <section class="content">
@@ -161,18 +196,31 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
       </div>
       <div class="section panel"><div class="label">Item</div><div>${escapeHtml(order.item_description)}</div></div>
       <div class="section panel">
+        <div class="label">Protection and trust</div>
+        <div class="row"><span>Protection tier</span><strong>${escapeHtml(protectionLabel)}</strong></div>
+        <div class="row"><span>Protection coverage</span><strong>${escapeHtml(protectionCoverage ? money(protectionCoverage) : 'Basic')}</strong></div>
+        <div class="row"><span>Locked fare</span><strong>${escapeHtml(money(lockedFare))}</strong></div>
+        <div class="row"><span>ETA confidence</span><strong>${escapeHtml(order.eta_confidence ? `${order.eta_confidence}%` : 'Not available')}</strong></div>
+      </div>
+      <div class="section panel">
         <div class="label">Payment</div>
-        <div class="row"><span>Base delivery price</span><strong>${escapeHtml(money(basePrice))}</strong></div>
-        ${order.is_promo_free ? `<div class="row"><span>Promo covered by Droplix</span><strong>-${escapeHtml(money(basePrice))}</strong></div>` : ''}
+        <div class="row"><span>Rider delivery payout</span><strong>${escapeHtml(money(deliveryFee))}</strong></div>
+        ${protectionFee ? `<div class="row"><span>Protection fee</span><strong>${escapeHtml(money(protectionFee))}</strong></div>` : ''}
+        ${priorityFee ? `<div class="row"><span>Priority fee</span><strong>${escapeHtml(money(priorityFee))}</strong></div>` : ''}
+        ${order.is_promo_free ? `<div class="row"><span>Promo covered by Droplix</span><strong>-${escapeHtml(money(deliveryFee))}</strong></div>` : ''}
         <div class="row"><span>Total paid by sender</span><strong>${escapeHtml(money(totalAmount))}</strong></div>
         <div class="row"><span>Payment method</span><strong>${escapeHtml(order.is_promo_free ? 'Promo credit' : 'Cash on delivery')}</strong></div>
+      </div>
+      <div class="section panel">
+        <div class="label">Verified photo chain</div>
+        ${proofLinks}
       </div>
       <div class="section" style="display:flex;justify-content:space-between;gap:20px;align-items:center;">
         <div class="muted">Delivery timestamp: ${escapeHtml(deliveryDate)}</div>
         ${qrImage}
       </div>
     </section>
-    <footer class="footer">Keep this receipt for support, refunds, and delivery proof checks.</footer>
+    <footer class="footer">Keep this receipt for support, refunds, and delivery proof checks. Support: ${escapeHtml(DROPLIX_SUPPORT_EMAIL)}</footer>
   </main>
 </body>
 </html>`;
@@ -255,17 +303,31 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
         <div className="bg-primary p-5 text-primary-foreground md:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Package className="h-6 w-6" />
-                <h2 className="font-heading text-2xl font-bold">Delivery Receipt</h2>
+              <div className="flex items-center gap-3">
+                <span className="rounded-lg bg-white p-1.5 shadow-sm">
+                  <DroplixLogo size={38} />
+                </span>
+                <div>
+                  <h2 className="font-heading text-2xl font-bold">Delivery Receipt</h2>
+                  <p className="text-xs text-primary-foreground/80">Trusted parcel proof and payment summary</p>
+                </div>
               </div>
               <p className="mt-2 text-sm text-primary-foreground/80">
                 Receipt #{receiptCode}
               </p>
             </div>
-            <Badge className={`${statusColor[order.status]} w-fit border bg-white/95`}>
-              {order.status.replace('_', ' ').toUpperCase()}
-            </Badge>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <Badge className={`${statusColor[order.status]} w-fit border bg-white/95`}>
+                {order.status.replace('_', ' ').toUpperCase()}
+              </Badge>
+              <a
+                href={supportHref}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-foreground/90 underline-offset-4 hover:underline"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {DROPLIX_SUPPORT_EMAIL}
+              </a>
+            </div>
           </div>
         </div>
 
@@ -339,6 +401,27 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
             )}
           </section>
 
+          <section className="rounded-lg border bg-primary/5 p-4">
+            <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+              <ShieldCheck className="h-4 w-4" />
+              Protection and trust
+            </p>
+            <div className="grid gap-3 text-sm sm:grid-cols-3">
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Protection tier</p>
+                <p className="font-semibold">{protectionLabel}</p>
+              </div>
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Coverage</p>
+                <p className="font-semibold">{protectionCoverage ? money(protectionCoverage) : 'Basic'}</p>
+              </div>
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Locked fare</p>
+                <p className="font-semibold text-primary">{money(lockedFare)}</p>
+              </div>
+            </div>
+          </section>
+
           <section className="rounded-lg border bg-background/80 p-4">
             <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
               <IndianRupee className="h-4 w-4" />
@@ -346,16 +429,28 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Base delivery price</span>
-                <span className="font-medium">{money(basePrice)}</span>
+                <span className="text-muted-foreground">Rider delivery payout</span>
+                <span className="font-medium">{money(deliveryFee)}</span>
               </div>
+              {protectionFee > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Protection fee</span>
+                  <span className="font-medium">{money(protectionFee)}</span>
+                </div>
+              )}
+              {priorityFee > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Priority fee</span>
+                  <span className="font-medium">{money(priorityFee)}</span>
+                </div>
+              )}
               {order.is_promo_free && (
                 <div className="flex items-center justify-between gap-4 text-emerald-700">
                   <span className="flex items-center gap-1.5">
                     <Gift className="h-3.5 w-3.5" />
                     Promo covered by Droplix
                   </span>
-                  <span className="font-semibold">-{money(basePrice)}</span>
+                  <span className="font-semibold">-{money(deliveryFee)}</span>
                 </div>
               )}
               <Separator />
@@ -375,13 +470,29 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
             </div>
           </section>
 
-          {(order.delivered_at || order.delivery_proof_url || order.cancelled_at) && (
-            <section className="rounded-lg border bg-muted/25 p-4">
-              <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                <ShieldCheck className="h-4 w-4" />
-                Delivery proof
-              </p>
-              <div className="space-y-2 text-sm">
+          <section className="rounded-lg border bg-muted/25 p-4">
+            <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+              <ShieldCheck className="h-4 w-4" />
+              Verified photo chain
+            </p>
+            <div className="grid gap-2 text-sm sm:grid-cols-3">
+              {proofItems.map((item) => (
+                <div key={item.label} className="rounded-lg border bg-background/80 p-3">
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  {item.url ? (
+                    <Button size="sm" variant="outline" asChild className="no-print mt-2 h-8">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                        View proof
+                      </a>
+                    </Button>
+                  ) : (
+                    <p className="mt-2 text-xs font-medium text-muted-foreground">Pending</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {(order.delivered_at || order.cancelled_at) && (
+              <div className="mt-3 rounded-lg border bg-background/80 p-3 text-sm">
                 {order.delivered_at && (
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-muted-foreground">Delivered</span>
@@ -394,16 +505,9 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
                     <span className="font-medium">{safeFormatDate(order.cancelled_at, 'PPP p')}</span>
                   </div>
                 )}
-                {order.delivery_proof_url && (
-                  <Button size="sm" variant="outline" asChild className="no-print">
-                    <a href={order.delivery_proof_url} target="_blank" rel="noopener noreferrer">
-                      View proof photo
-                    </a>
-                  </Button>
-                )}
               </div>
-            </section>
-          )}
+            )}
+          </section>
 
           <div className="flex flex-col gap-4 rounded-lg border bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -447,7 +551,11 @@ export function OrderReceipt({ order, showActions = true }: OrderReceiptProps) {
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            Keep this receipt for support, refunds, and delivery proof checks.
+            Keep this receipt for support, refunds, and delivery proof checks. Contact{' '}
+            <a href={supportHref} className="font-medium text-primary underline-offset-4 hover:underline">
+              {DROPLIX_SUPPORT_EMAIL}
+            </a>
+            .
           </p>
         </div>
       </CardContent>

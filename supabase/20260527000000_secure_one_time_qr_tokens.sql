@@ -93,8 +93,8 @@ begin
   end if;
 
   ttl := least(greatest(coalesce(_ttl_seconds, 900), 60), 3600);
-  raw_token := encode(gen_random_bytes(32), 'hex');
-  hashed_token := encode(digest(raw_token, 'sha256'), 'hex');
+  raw_token := encode(extensions.gen_random_bytes(32), 'hex');
+  hashed_token := encode(extensions.digest(raw_token, 'sha256'), 'hex');
   expires_at_value := now() + make_interval(secs => ttl);
 
   update public.order_qr_tokens
@@ -163,7 +163,7 @@ begin
     raise exception 'Only approved riders can verify QR handoffs';
   end if;
 
-  hashed_token := encode(digest(btrim(coalesce(_token, '')), 'sha256'), 'hex');
+  hashed_token := encode(extensions.digest(btrim(coalesce(_token, '')), 'sha256'), 'hex');
 
   select *
   into token_row

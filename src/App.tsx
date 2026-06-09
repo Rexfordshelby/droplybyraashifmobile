@@ -1,13 +1,15 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { RouteSEO } from "@/components/seo/RouteSEO";
+import { applyAppPreferences } from "@/lib/appPreferences";
+import { addNativeNotificationActionListener } from "@/lib/mobileNotifications";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -46,36 +48,74 @@ const RouteFallback = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ConfigurationWarning />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <RouteSEO />
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/send" element={<SendParcel />} />
-              <Route path="/rider" element={<RiderDashboard />} />
-              <Route path="/become-rider" element={<BecomeRider />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/receipt/:orderId" element={<Receipt />} />
-              <Route path="/track/:orderId" element={<Track />} />
-              <Route path="/t/:code" element={<PublicTrack />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const NativeNotificationBridge = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let listener: { remove: () => Promise<void> } | null = null;
+    let cancelled = false;
+
+    addNativeNotificationActionListener((extra) => {
+      const route = typeof extra.route === 'string' ? extra.route : '/notifications';
+      navigate(route);
+    })
+      .then((handle) => {
+        if (cancelled) {
+          void handle?.remove();
+          return;
+        }
+        listener = handle;
+      })
+      .catch((error) => {
+        console.warn('Native notification listener failed:', error);
+      });
+
+    return () => {
+      cancelled = true;
+      void listener?.remove();
+    };
+  }, [navigate]);
+
+  return null;
+};
+
+const App = () => {
+  useEffect(() => {
+    applyAppPreferences();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <ConfigurationWarning />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <NativeNotificationBridge />
+            <RouteSEO />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/send" element={<SendParcel />} />
+                <Route path="/rider" element={<RiderDashboard />} />
+                <Route path="/become-rider" element={<BecomeRider />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/receipt/:orderId" element={<Receipt />} />
+                <Route path="/track/:orderId" element={<Track />} />
+                <Route path="/t/:code" element={<PublicTrack />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

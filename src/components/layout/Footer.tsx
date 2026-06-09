@@ -1,13 +1,14 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { DroplixLogo } from '@/components/brand/DroplixLogo';
+import { DROPLIX_SUPPORT_EMAIL, DROPLIX_SUPPORT_MAILTO } from '@/lib/contact';
 
 export const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
   return (
     <footer ref={ref} className="border-t border-border bg-card">
       <div className="container py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <DroplixLogo size={32} wordmarkClassName="text-lg" />
+          <DroplixLogo size={36} />
 
           <nav className="flex items-center gap-6 text-sm">
             <Link to="/send" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -21,9 +22,12 @@ export const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
             </Link>
           </nav>
 
-          <p className="text-sm text-muted-foreground">
-            Same-day parcel delivery for Mumbai
-          </p>
+          <a
+            href={DROPLIX_SUPPORT_MAILTO}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {DROPLIX_SUPPORT_EMAIL}
+          </a>
         </div>
 
         <div className="mt-6 pt-6 border-t border-border text-center">

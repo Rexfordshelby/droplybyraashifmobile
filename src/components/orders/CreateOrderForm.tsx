@@ -5,21 +5,28 @@ import { z } from 'zod';
 import {
   AlertCircle,
   ArrowRightLeft,
+  Building2,
   Camera,
+  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
   FileText,
+  Flame,
   Gift,
   IndianRupee,
   Loader2,
+  Mail,
+  MessageCircle,
   MapPin,
   Package,
   Phone,
   Route,
   Send,
+  ShieldCheck,
   Sparkles,
   Truck,
+  Users,
   Wallet,
   X,
 } from 'lucide-react';
@@ -55,6 +62,18 @@ import { MumbaiAreaPicker } from './MumbaiAreaPicker';
 import { MUMBAI_AREAS, MumbaiArea, haversineKm, findMumbaiArea } from '@/data/mumbaiAreas';
 import { consumeOrderDraft } from '@/lib/orderDrafts';
 import { readOrderMemory, rememberOrderDetails, type OrderMemory } from '@/lib/orderMemory';
+import {
+  deliveryPriorityOptions,
+  getEtaPrediction,
+  getPriorityFee,
+  getProtectionQuote,
+  protectionPlans,
+  supportChannelOptions,
+  type DeliveryPriority,
+  type ProtectionTier,
+  type SupportChannel,
+} from '@/lib/trustFeatures';
+import { DROPLIX_SUPPORT_EMAIL, DROPLIX_SUPPORT_MAILTO } from '@/lib/contact';
 
 const formSchema = z.object({
   pickup_address: z.string().min(10, 'Enter complete pickup address'),
@@ -69,6 +88,14 @@ const formSchema = z.object({
   receiver_phone: z.string().optional(),
   price_offered: z.number().min(0, 'Invalid price'),
   estimated_distance: z.number().min(1, 'Enter distance'),
+  protection_tier: z.enum(['basic', 'protected', 'premium']).default('basic'),
+  delivery_priority: z.enum(['standard', 'scheduled', 'emergency']).default('standard'),
+  scheduled_for: z.string().optional(),
+  business_order: z.boolean().default(false),
+  business_name: z.string().optional(),
+  multi_stop_count: z.number().min(1).max(8).default(1),
+  trusted_rider_required: z.boolean().default(false),
+  support_channel: z.enum(['whatsapp', 'call']).default('whatsapp'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -211,6 +238,14 @@ export function CreateOrderForm() {
       receiver_phone: '',
       price_offered: 50,
       estimated_distance: 5,
+      protection_tier: 'basic',
+      delivery_priority: 'standard',
+      scheduled_for: '',
+      business_order: false,
+      business_name: '',
+      multi_stop_count: 1,
+      trusted_rider_required: false,
+      support_channel: 'whatsapp',
     },
   });
 
@@ -231,6 +266,14 @@ export function CreateOrderForm() {
       receiver_phone: draft.receiver_phone ?? '',
       price_offered: 50,
       estimated_distance: draft.estimated_distance,
+      protection_tier: 'basic',
+      delivery_priority: 'standard',
+      scheduled_for: '',
+      business_order: false,
+      business_name: '',
+      multi_stop_count: 1,
+      trusted_rider_required: false,
+      support_channel: 'whatsapp',
     });
     // Try to match Mumbai areas from address strings ("Andheri West, Mumbai")
     const tryMatch = (addr: string) => {
@@ -275,19 +318,39 @@ export function CreateOrderForm() {
   const itemCategory = form.watch('item_category');
   const itemValue = form.watch('item_value');
   const isFragile = form.watch('is_fragile');
+  const protectionTier = form.watch('protection_tier') as ProtectionTier;
+  const deliveryPriority = form.watch('delivery_priority') as DeliveryPriority;
+  const scheduledFor = form.watch('scheduled_for');
+  const businessOrder = form.watch('business_order');
+  const multiStopCount = form.watch('multi_stop_count');
+  const trustedRiderRequired = form.watch('trusted_rider_required');
+  const supportChannel = form.watch('support_channel') as SupportChannel;
   const itemSafety = useMemo(() => getItemSafety(itemDescription || ''), [itemDescription]);
+  const protectionQuote = useMemo(() => getProtectionQuote(protectionTier, itemValue), [itemValue, protectionTier]);
+  const priorityFee = getPriorityFee(deliveryPriority);
+  const etaPrediction = useMemo(
+    () => getEtaPrediction(estimatedDistance, deliveryPriority),
+    [deliveryPriority, estimatedDistance],
+  );
+  const riderPayout = useFreeDelivery ? minimumPrice : Math.max(priceOffered, minimumPrice);
+  const addOnFee = protectionQuote.fee + priorityFee;
+  const lockedFare = useFreeDelivery ? addOnFee : riderPayout + addOnFee;
+  const hasPaidAddOns = useFreeDelivery && addOnFee > 0;
   const priceTooLow = !useFreeDelivery && priceOffered < minimumPrice;
   const itemBlocked = itemSafety.level === 'blocked' || itemValue > 20000;
+  const scheduleMissing = deliveryPriority === 'scheduled' && !scheduledFor;
   const currentStepMeta = steps[currentStep - 1];
   const CurrentStepIcon = currentStepMeta.icon;
-  const canSubmitOrder = liabilityAccepted && !priceTooLow && !itemBlocked;
+  const canSubmitOrder = liabilityAccepted && !priceTooLow && !itemBlocked && !scheduleMissing;
   const submitHelpText = itemBlocked
     ? 'This item cannot be sent through Droplix. Check the item description and declared value before booking.'
     : priceTooLow
-    ? `Offer at least ₹${minimumPrice} so riders see a fair payout.`
-    : !liabilityAccepted
-      ? 'Accept the safety terms before sending this order live.'
-      : null;
+      ? `Offer at least Rs ${minimumPrice} so riders see a fair payout.`
+      : scheduleMissing
+        ? 'Choose a pickup slot for scheduled delivery.'
+        : !liabilityAccepted
+          ? 'Accept the safety terms before sending this order live.'
+          : null;
 
   const applyRememberedAddress = (field: 'pickup_address' | 'drop_address', address: string) => {
     form.setValue(field, address, { shouldDirty: true, shouldValidate: true });
@@ -358,6 +421,17 @@ export function CreateOrderForm() {
       return;
     }
 
+    if (scheduleMissing) {
+      const message = 'Choose a pickup slot before confirming scheduled delivery.';
+      setSubmitError(message);
+      toast({
+        title: 'Pickup slot required',
+        description: message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -381,6 +455,24 @@ export function CreateOrderForm() {
         distance_km: values.estimated_distance,
         is_promo_free: useFreeDelivery,
         item_photo: itemPhoto,
+        protection_tier: values.protection_tier,
+        protection_fee: protectionQuote.fee,
+        protection_coverage: protectionQuote.coverage,
+        fare_locked: true,
+        fare_locked_amount: lockedFare,
+        delivery_priority: values.delivery_priority,
+        priority_fee: priorityFee,
+        scheduled_for: values.delivery_priority === 'scheduled' ? values.scheduled_for || null : null,
+        business_order: values.business_order,
+        business_name: values.business_order ? values.business_name || null : null,
+        multi_stop_count: values.business_order ? values.multi_stop_count : 1,
+        trusted_rider_required: values.trusted_rider_required || values.protection_tier === 'premium',
+        support_channel: values.support_channel,
+        estimated_eta_minutes: etaPrediction.minutes,
+        eta_confidence: etaPrediction.confidence,
+        guarantee_credit_amount: values.delivery_priority === 'emergency' ? 50 : 20,
+        sender_paid_amount: lockedFare,
+        platform_paid_amount: useFreeDelivery ? riderPayout : 0,
       });
 
       if (order) {
@@ -644,6 +736,70 @@ export function CreateOrderForm() {
                       📏 Approx distance: <strong>{estimatedDistance} km</strong>
                     </div>
                   )}
+
+                  <div className="rounded-lg border bg-background/80 p-4">
+                    <div className="mb-3 flex items-center gap-2 font-medium">
+                      <CalendarClock className="h-5 w-5 text-primary" />
+                      Delivery timing
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="delivery_priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            {deliveryPriorityOptions.map((option) => {
+                              const selected = field.value === option.value;
+                              const Icon = option.value === 'emergency' ? Flame : option.value === 'scheduled' ? CalendarClock : Truck;
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => field.onChange(option.value)}
+                                  className={`rounded-lg border p-3 text-left transition-all ${
+                                    selected ? 'border-primary bg-primary/10 shadow-sm' : 'bg-card hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="flex items-center gap-2 text-sm font-semibold">
+                                      <Icon className="h-4 w-4 text-primary" />
+                                      {option.label}
+                                    </span>
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {option.fee ? `+Rs ${option.fee}` : 'Included'}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-xs text-muted-foreground">{option.detail}</p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {deliveryPriority === 'scheduled' && (
+                      <FormField
+                        control={form.control}
+                        name="scheduled_for"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Pickup slot</FormLabel>
+                            <FormControl>
+                              <Input type="datetime-local" className="bg-background" {...field} />
+                            </FormControl>
+                            <FormDescription>Pick a realistic slot so riders can plan ahead.</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <div className="mt-3 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                      AI estimate: {etaPrediction.confidence}% chance of delivery within {etaPrediction.minutes} minutes after pickup.
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -770,6 +926,53 @@ export function CreateOrderForm() {
                         </div>
                       </div>
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="protection_tier"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <div className="mb-3 flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-primary" />
+                            <div>
+                              <FormLabel>Smart Parcel Protection</FormLabel>
+                              <FormDescription>Choose based on the decision you want Droplix to help with: how much risk is acceptable?</FormDescription>
+                            </div>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-3">
+                            {protectionPlans.map((plan) => {
+                              const quote = getProtectionQuote(plan.tier, itemValue);
+                              const selected = field.value === plan.tier;
+                              return (
+                                <button
+                                  key={plan.tier}
+                                  type="button"
+                                  onClick={() => field.onChange(plan.tier)}
+                                  className={`rounded-lg border p-3 text-left transition-all ${
+                                    selected ? 'border-primary bg-primary/10 shadow-sm' : 'bg-card hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <p className="text-sm font-semibold">{plan.label}</p>
+                                      <p className="text-xs text-muted-foreground">{plan.summary}</p>
+                                    </div>
+                                    <span className="rounded-md border bg-background px-2 py-1 text-xs font-bold">
+                                      {quote.fee ? `Rs ${quote.fee}` : 'Free'}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-xs text-muted-foreground">{plan.detail}</p>
+                                  <p className="mt-2 text-xs font-medium text-primary">
+                                    {quote.coverage ? `Protected up to Rs ${quote.coverage}` : 'No claim cover selected'}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     {/* Optional item photo */}
                     <div className="mt-4">
@@ -902,6 +1105,119 @@ export function CreateOrderForm() {
               {/* Step 4: Pricing & Confirm */}
               {currentStep === 4 && (
                 <div className="space-y-5 animate-fade-in">
+                  <div className="grid gap-3 lg:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="trusted_rider_required"
+                      render={({ field }) => (
+                        <FormItem className="flex items-start gap-3 rounded-lg border bg-background/80 p-4">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4 text-primary" />
+                              Trusted rider only
+                            </FormLabel>
+                            <FormDescription>Prioritize higher Trust Score riders. Premium protection enables this automatically.</FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="business_order"
+                      render={({ field }) => (
+                        <FormItem className="flex items-start gap-3 rounded-lg border bg-background/80 p-4">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-primary" />
+                              Business delivery
+                            </FormLabel>
+                            <FormDescription>Unlock bulk-friendly details, repeat rider preference, and invoice-ready history.</FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="support_channel"
+                      render={({ field }) => (
+                        <FormItem className="rounded-lg border bg-background/80 p-4">
+                          <FormLabel className="flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4 text-primary" />
+                            Human support
+                          </FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger className="mt-2 bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {supportChannelOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription className="mt-2">
+                            No vague chatbot promise. Escalations go to real support at{' '}
+                            <a href={DROPLIX_SUPPORT_MAILTO} className="font-medium text-primary underline-offset-4 hover:underline">
+                              {DROPLIX_SUPPORT_EMAIL}
+                            </a>
+                            .
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {businessOrder && (
+                    <div className="grid gap-3 rounded-lg border bg-primary/5 p-4 md:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="business_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Rexford Store" className="bg-background" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="multi_stop_count"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stops in this run</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={8}
+                                className="bg-background"
+                                {...field}
+                                onChange={(event) => field.onChange(parseInt(event.target.value, 10) || 1)}
+                              />
+                            </FormControl>
+                            <FormDescription>Use 1 for normal delivery. Multi-stop batches can be priced later by admin.</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
                   <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
                     <div className="rounded-lg border bg-background/80 p-4 shadow-sm animate-slide-up">
                       <div className="mb-4 flex items-center gap-3">
@@ -951,16 +1267,53 @@ export function CreateOrderForm() {
                           </p>
                         </div>
                       </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-semibold">
+                          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                          {protectionQuote.label}
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-semibold capitalize">
+                          <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                          {deliveryPriority}
+                        </span>
+                        {(trustedRiderRequired || protectionTier === 'premium') && (
+                          <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-semibold">
+                            <Users className="h-3.5 w-3.5 text-primary" />
+                            Trusted rider
+                          </span>
+                        )}
+                        {businessOrder && (
+                          <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-semibold">
+                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                            Business · {multiStopCount} stop{multiStopCount === 1 ? '' : 's'}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {useFreeDelivery ? (
                       <div className="relative overflow-hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-5 text-center shadow-sm animate-slide-up stagger-1">
                         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary to-emerald-400 animate-soft-pulse" />
                         <Sparkles className="mx-auto mb-3 h-10 w-10 text-emerald-600" />
-                        <p className="text-sm text-muted-foreground line-through">Normal price ₹{minimumPrice}</p>
-                        <p className="my-2 text-5xl font-bold text-emerald-600">₹0</p>
-                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Promo applied. This delivery is free.</p>
-                        <p className="mt-2 text-xs text-muted-foreground">Droplix pays ₹{minimumPrice} to the rider on your behalf.</p>
+                        <p className="text-sm text-muted-foreground line-through">Normal delivery Rs {minimumPrice}</p>
+                        <p className="my-2 text-5xl font-bold text-emerald-600">Rs {lockedFare}</p>
+                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                          {hasPaidAddOns ? 'Delivery is free. Only selected add-ons are due.' : 'Promo applied. This delivery is free.'}
+                        </p>
+                        <div className="mt-4 rounded-lg border border-emerald-500/25 bg-background/80 p-3 text-left text-xs">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">Delivery fee</span>
+                            <span className="font-semibold text-emerald-700">Rs 0</span>
+                          </div>
+                          {hasPaidAddOns && (
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground">Protection/priority add-ons</span>
+                              <span className="font-semibold">Rs {addOnFee}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">Droplix pays Rs {minimumPrice} to the rider on your behalf.</p>
                       </div>
                     ) : (
                       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm animate-slide-up stagger-1">
@@ -1044,24 +1397,63 @@ export function CreateOrderForm() {
                     <div className="rounded-lg border bg-background/70 p-3">
                       <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <Check className="h-3.5 w-3.5 text-primary" />
-                        Handoff
+                        Locked fare
                       </div>
-                      <p className="text-sm font-semibold">OTP verified</p>
+                      <p className="text-sm font-semibold">Rs {lockedFare}</p>
+                    </div>
+                    <div className="rounded-lg border bg-background/70 p-3">
+                      <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                        Protection
+                      </div>
+                      <p className="text-sm font-semibold">
+                        {protectionQuote.coverage ? `Rs ${protectionQuote.coverage}` : 'Basic'}
+                      </p>
                     </div>
                     <div className="rounded-lg border bg-background/70 p-3">
                       <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <Truck className="h-3.5 w-3.5 text-primary" />
-                        Matching
-                      </div>
-                      <p className="text-sm font-semibold">Verified riders</p>
-                    </div>
-                    <div className="rounded-lg border bg-background/70 p-3">
-                      <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <Wallet className="h-3.5 w-3.5 text-primary" />
-                        You pay
+                        ETA confidence
                       </div>
                       <p className="text-sm font-semibold text-primary">
-                        {useFreeDelivery ? '₹0 free delivery' : `₹${priceOffered}`}
+                        {etaPrediction.confidence}% in {etaPrediction.minutes} min
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-background/70 p-3">
+                    <div className="grid gap-2 text-sm sm:grid-cols-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Rider payout</p>
+                        <p className="font-semibold">Rs {riderPayout}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Protection fee</p>
+                        <p className="font-semibold">Rs {protectionQuote.fee}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Priority fee</p>
+                        <p className="font-semibold">Rs {priorityFee}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Support</p>
+                        <p className="font-semibold capitalize">{supportChannel}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4 text-sm">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground">Need help before sending?</p>
+                      <p className="text-muted-foreground">
+                        Email{' '}
+                        <a href={DROPLIX_SUPPORT_MAILTO} className="break-all font-medium text-primary underline-offset-4 hover:underline">
+                          {DROPLIX_SUPPORT_EMAIL}
+                        </a>
+                        {' '}with your order code, parcel value, or rider issue.
                       </p>
                     </div>
                   </div>
@@ -1121,7 +1513,7 @@ export function CreateOrderForm() {
                       type="submit"
                       className={`btn-gradient btn-shine min-w-[210px] ${canSubmitOrder ? 'shadow-lg' : ''}`}
                       size="lg"
-                      disabled={isSubmitting || priceTooLow || itemBlocked}
+                      disabled={isSubmitting || priceTooLow || itemBlocked || scheduleMissing}
                       aria-describedby={submitHelpText ? 'submit-help' : undefined}
                     >
                       {isSubmitting ? (

@@ -15,7 +15,7 @@ const flowPoints = [
   {
     icon: Truck,
     title: "Rider verifies pickup",
-    copy: "The rider must scan your pickup QR or match the Order ID.",
+    copy: "The rider must scan your one-time pickup QR. Public order IDs are only for tracking.",
   },
   {
     icon: KeyRound,

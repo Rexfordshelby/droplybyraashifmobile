@@ -29,7 +29,7 @@ const FAQS = [
   },
   {
     q: 'How do I contact support?',
-    a: 'Tap the Help icon on the Rider Dashboard, or email support@droplix.in. We respond within a few hours.',
+    a: 'Tap the Help icon on the Rider Dashboard, or email raashifshaikh70@gmail.com. We respond within a few hours.',
   },
 ];
 

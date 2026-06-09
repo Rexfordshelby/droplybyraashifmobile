@@ -65,6 +65,24 @@ export type Database = {
           delivery_otp_failed_count: number
           delivery_otp_locked_until: string | null
           delivery_proof_url: string | null
+          pickup_proof_url: string | null
+          transit_photo_url: string | null
+          protection_tier: string
+          protection_fee: number
+          protection_coverage: number
+          fare_locked: boolean
+          fare_locked_amount: number
+          delivery_priority: string
+          priority_fee: number
+          scheduled_for: string | null
+          business_order: boolean
+          business_name: string | null
+          multi_stop_count: number
+          trusted_rider_required: boolean
+          support_channel: string
+          estimated_eta_minutes: number | null
+          eta_confidence: number | null
+          guarantee_credit_amount: number
           distance_km: number | null
           drop_address: string
           drop_landmark: string | null
@@ -97,6 +115,24 @@ export type Database = {
           delivery_otp_failed_count?: number
           delivery_otp_locked_until?: string | null
           delivery_proof_url?: string | null
+          pickup_proof_url?: string | null
+          transit_photo_url?: string | null
+          protection_tier?: string
+          protection_fee?: number
+          protection_coverage?: number
+          fare_locked?: boolean
+          fare_locked_amount?: number
+          delivery_priority?: string
+          priority_fee?: number
+          scheduled_for?: string | null
+          business_order?: boolean
+          business_name?: string | null
+          multi_stop_count?: number
+          trusted_rider_required?: boolean
+          support_channel?: string
+          estimated_eta_minutes?: number | null
+          eta_confidence?: number | null
+          guarantee_credit_amount?: number
           distance_km?: number | null
           drop_address: string
           drop_landmark?: string | null
@@ -129,6 +165,24 @@ export type Database = {
           delivery_otp_failed_count?: number
           delivery_otp_locked_until?: string | null
           delivery_proof_url?: string | null
+          pickup_proof_url?: string | null
+          transit_photo_url?: string | null
+          protection_tier?: string
+          protection_fee?: number
+          protection_coverage?: number
+          fare_locked?: boolean
+          fare_locked_amount?: number
+          delivery_priority?: string
+          priority_fee?: number
+          scheduled_for?: string | null
+          business_order?: boolean
+          business_name?: string | null
+          multi_stop_count?: number
+          trusted_rider_required?: boolean
+          support_channel?: string
+          estimated_eta_minutes?: number | null
+          eta_confidence?: number | null
+          guarantee_credit_amount?: number
           distance_km?: number | null
           drop_address?: string
           drop_landmark?: string | null
@@ -387,6 +441,7 @@ export type Database = {
       consume_free_delivery: { Args: { _user_id: string }; Returns: boolean }
       generate_tracking_code: { Args: never; Returns: string }
       get_public_order: { Args: { _code: string }; Returns: Json }
+      get_rider_trust_profile: { Args: { _rider_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

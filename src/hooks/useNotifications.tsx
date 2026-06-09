@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { requestNativeNotificationPermission, showNativeNotification } from '@/lib/mobileNotifications';
 
 export interface Notification {
   id: string;
@@ -74,6 +75,8 @@ export function useNotifications() {
     fetchNotifications();
 
     if (user) {
+      requestNativeNotificationPermission().catch(() => {});
+
       const channel = supabase
         .channel('notifications-changes')
         .on(
@@ -84,7 +87,15 @@ export function useNotifications() {
             table: 'notifications',
             filter: `user_id=eq.${user.id}`
           },
-          () => {
+          (payload) => {
+            const notification = payload.new as Notification;
+            void showNativeNotification({
+              title: notification.title,
+              body: notification.message,
+              tag: notification.id,
+              route: notification.order_id ? `/track/${notification.order_id}` : '/notifications',
+              orderId: notification.order_id,
+            });
             fetchNotifications();
           }
         )

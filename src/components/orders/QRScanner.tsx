@@ -54,7 +54,7 @@ function parseScanPayload(raw: string): ParsedPayload {
 
 export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode, trigger }: QRScannerProps) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'manual' | 'camera'>('manual');
+  const [activeTab, setActiveTab] = useState<'manual' | 'camera'>(type === 'pickup' ? 'camera' : 'manual');
   const [manualValue, setManualValue] = useState('');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -102,7 +102,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
 
       if (!accepted) {
         markRejected();
-        return;
+        return false;
       }
 
       stopCamera();
@@ -116,6 +116,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
         setManualValue('');
         setScanFeedback('idle');
       }, 600);
+      return true;
     },
     [markRejected, onScan, stopCamera, toast, type],
   );
@@ -152,8 +153,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
           handleFailure('Enter the receiver OTP or scan a secure delivery QR.');
           return false;
         }
-        await handleSuccess(value);
-        return true;
+        return handleSuccess(value);
       }
 
       // pickup
@@ -167,7 +167,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
         return false;
       }
       const candidateOrderId = (parsed.orderId || value).trim();
-      const candidateTrackingCode = (parsed.trackingCode || value).trim();
+      const candidateTrackingCode = (parsed.trackingCode || value).trim().replace(/^#/, '');
       const expectedFull = expectedOrderId.toLowerCase();
       const expectedShort = expectedOrderId.slice(0, 8).toLowerCase();
       const expectedTracking = expectedTrackingCode?.toLowerCase();
@@ -188,6 +188,11 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
         return false;
       }
 
+      if (!parsed.isJson && expectedTracking && value.replace(/^#/, '').toLowerCase() === expectedTracking) {
+        handleFailure('That is the public tracking code. Ask the sender to tap Pickup QR and scan the square one-time QR.');
+        return false;
+      }
+
       if (!parsed.isJson && !/^[a-zA-Z0-9_-]{32,}$/.test(value)) {
         if (source === 'camera' && lastRejectedRef.current === value.toLowerCase()) {
           return false;
@@ -197,8 +202,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
         return false;
       }
 
-      await handleSuccess(value);
-      return true;
+      return handleSuccess(value);
     },
     [expectedOrderId, expectedTrackingCode, handleFailure, handleSuccess, isVerifying, type],
   );
@@ -229,8 +233,18 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
     });
 
     if (code && code.data) {
-      const matched = validateAndComplete(code.data, 'camera');
-      if (matched) return; // stopCamera already called inside handleSuccess
+      void validateAndComplete(code.data, 'camera')
+        .then((matched) => {
+          if (!matched && streamRef.current) {
+            rafRef.current = requestAnimationFrame(tick);
+          }
+        })
+        .catch(() => {
+          if (streamRef.current) {
+            rafRef.current = requestAnimationFrame(tick);
+          }
+        });
+      return;
     }
     rafRef.current = requestAnimationFrame(tick);
   }, [isVerifying, validateAndComplete]);
@@ -291,17 +305,17 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
       setManualValue('');
       setScanFeedback('idle');
       setIsVerifying(false);
-      setActiveTab('manual');
+      setActiveTab(type === 'pickup' ? 'camera' : 'manual');
       lastRejectedRef.current = '';
       cooldownUntilRef.current = 0;
     }
-  }, [open, stopCamera]);
+  }, [open, stopCamera, type]);
 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
   const manualLabel =
-    type === 'pickup' ? 'Paste secure pickup token' : 'Enter 4-digit Delivery OTP';
-  const manualPlaceholder = type === 'pickup' ? 'Scan QR preferred' : '0000';
+    type === 'pickup' ? 'Paste secure pickup token from QR' : 'Enter 4-digit Delivery OTP';
+  const manualPlaceholder = type === 'pickup' ? '64-character secure token only' : '0000';
   const manualMaxLength = type === 'delivery' ? 4 : 128;
   const manualPattern = type === 'delivery' ? '\\d*' : undefined;
   const manualInputMode: 'numeric' | 'text' = type === 'delivery' ? 'numeric' : 'text';
@@ -323,7 +337,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
           </DialogTitle>
           <DialogDescription>
             {type === 'pickup'
-              ? "Scan the customer's pickup QR or enter the Order ID they show you."
+              ? "Scan the customer's one-time pickup QR. Public order codes cannot verify pickup."
               : 'Scan the delivery QR or enter the 4-digit OTP the receiver reads out.'}
           </DialogDescription>
         </DialogHeader>
@@ -332,7 +346,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="manual">
               <Keyboard className="h-4 w-4 mr-2" />
-              {type === 'delivery' ? 'OTP' : 'Code'}
+              {type === 'delivery' ? 'OTP' : 'Token'}
             </TabsTrigger>
             <TabsTrigger value="camera">
               <Camera className="h-4 w-4 mr-2" />
@@ -378,7 +392,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
             </Button>
             {type === 'pickup' && (
               <p className="text-xs text-muted-foreground text-center">
-                For security, public tracking codes cannot confirm pickup. Scan the one-time QR.
+                For security, public tracking codes and order IDs cannot confirm pickup.
               </p>
             )}
           </TabsContent>
