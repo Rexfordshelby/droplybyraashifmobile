@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SITE_URL = 'https://droplixmumbai.vercel.app';
+const SITE_URL = 'https://droplix.vercel.app';
 
 type MetaConfig = {
   title: string;
