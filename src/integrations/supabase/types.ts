@@ -276,6 +276,63 @@ export type Database = {
           },
         ]
       }
+      rider_reviews: {
+        Row: {
+          business_context: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          parcel_arrived_safely: boolean
+          review_tags: string[]
+          reviewer_id: string | null
+          rider_id: string
+          trust_again: boolean
+          was_on_time: boolean
+        }
+        Insert: {
+          business_context?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          parcel_arrived_safely: boolean
+          review_tags?: string[]
+          reviewer_id?: string | null
+          rider_id: string
+          trust_again: boolean
+          was_on_time: boolean
+        }
+        Update: {
+          business_context?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          parcel_arrived_safely?: boolean
+          review_tags?: string[]
+          reviewer_id?: string | null
+          rider_id?: string
+          trust_again?: boolean
+          was_on_time?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rider_reviews_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -452,6 +509,10 @@ export type Database = {
       refund_free_delivery: { Args: { _user_id: string }; Returns: undefined }
       issue_order_qr_token: {
         Args: { _order_id: string; _token_type?: string; _ttl_seconds?: number }
+        Returns: Json
+      }
+      issue_receiver_delivery_qr_token: {
+        Args: { _tracking_code: string; _ttl_seconds?: number }
         Returns: Json
       }
       verify_delivery_otp: {

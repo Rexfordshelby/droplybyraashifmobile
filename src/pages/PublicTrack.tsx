@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { OrderTimeline } from '@/components/orders/OrderTimeline';
+import { ReceiverDeliveryQr } from '@/components/orders/ReceiverDeliveryQr';
 import { isSupabaseConfigured, supabase } from '@/integrations/supabase/client';
 import { OrderStatus } from '@/hooks/useOrders';
 import { formatDistanceToNow } from 'date-fns';
@@ -287,7 +288,7 @@ export default function PublicTrack() {
                     {order.delivery_otp}
                   </p>
                   <p className="text-sm text-foreground mt-3 font-medium">
-                    Read this code to the rider to confirm delivery.
+                    Show the QR below or read this code to the rider to confirm delivery.
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">
                     For your eyes only — do not share this code with anyone but the rider at your door.
@@ -298,6 +299,11 @@ export default function PublicTrack() {
                   Your OTP will appear here when the rider reaches your door. Please don't share this link with anyone else.
                 </p>
               )}
+              <ReceiverDeliveryQr
+                orderId={order.id}
+                trackingCode={order.tracking_code}
+                status={order.status}
+              />
             </CardContent>
           </Card>
         )}

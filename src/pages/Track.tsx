@@ -9,6 +9,7 @@ import { OrderQRCode } from "@/components/orders/OrderQRCode";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { RiderInfoCard } from "@/components/orders/RiderInfoCard";
 import { ShareReceiverCard } from "@/components/orders/ShareReceiverCard";
+import { RiderReviewCard } from "@/components/orders/RiderReviewCard";
 import { useAuth } from "@/hooks/useAuth";
 import { OrderStatus, useOrders } from "@/hooks/useOrders";
 
@@ -195,12 +196,15 @@ export default function Track() {
             )}
 
             {order.status === "delivered" && (
-              <Button asChild className="w-full btn-gradient">
-                <Link to={`/receipt/${order.id}`}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  View receipt
-                </Link>
-              </Button>
+              <div className="space-y-4">
+                {order.rider_id && <RiderReviewCard order={order} />}
+                <Button asChild className="w-full btn-gradient">
+                  <Link to={`/receipt/${order.id}`}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    View receipt
+                  </Link>
+                </Button>
+              </div>
             )}
           </aside>
         </div>

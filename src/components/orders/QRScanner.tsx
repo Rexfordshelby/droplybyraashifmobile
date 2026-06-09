@@ -54,7 +54,7 @@ function parseScanPayload(raw: string): ParsedPayload {
 
 export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode, trigger }: QRScannerProps) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'manual' | 'camera'>(type === 'pickup' ? 'camera' : 'manual');
+  const [activeTab, setActiveTab] = useState<'manual' | 'camera'>('camera');
   const [manualValue, setManualValue] = useState('');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -305,7 +305,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
       setManualValue('');
       setScanFeedback('idle');
       setIsVerifying(false);
-      setActiveTab(type === 'pickup' ? 'camera' : 'manual');
+      setActiveTab('camera');
       lastRejectedRef.current = '';
       cooldownUntilRef.current = 0;
     }
@@ -314,7 +314,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
   useEffect(() => () => stopCamera(), [stopCamera]);
 
   const manualLabel =
-    type === 'pickup' ? 'Paste secure pickup token from QR' : 'Enter 4-digit Delivery OTP';
+    type === 'pickup' ? 'Paste secure pickup token from QR' : 'Enter 4-digit delivery OTP';
   const manualPlaceholder = type === 'pickup' ? '64-character secure token only' : '0000';
   const manualMaxLength = type === 'delivery' ? 4 : 128;
   const manualPattern = type === 'delivery' ? '\\d*' : undefined;
@@ -338,7 +338,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
           <DialogDescription>
             {type === 'pickup'
               ? "Scan the customer's one-time pickup QR. Public order codes cannot verify pickup."
-              : 'Scan the delivery QR or enter the 4-digit OTP the receiver reads out.'}
+              : 'Scan the receiver QR or enter the 4-digit OTP they read out.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -346,7 +346,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="manual">
               <Keyboard className="h-4 w-4 mr-2" />
-              {type === 'delivery' ? 'OTP' : 'Token'}
+              {type === 'delivery' ? 'OTP code' : 'Token'}
             </TabsTrigger>
             <TabsTrigger value="camera">
               <Camera className="h-4 w-4 mr-2" />
@@ -375,7 +375,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
               />
               {type === 'delivery' && (
                 <p className="text-xs text-muted-foreground text-center">
-                  The receiver will read out a 4-digit code shown on their tracking link.
+                  The receiver can read this from their tracking link if scanning is not possible.
                 </p>
               )}
             </div>
@@ -454,7 +454,7 @@ export function QRScanner({ onScan, type, expectedOrderId, expectedTrackingCode,
               )}
             </div>
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Hold the QR code steady inside the frame. Only this order's QR will be accepted.
+              Hold the QR code steady inside the frame. Only this order's one-time QR will be accepted.
             </p>
           </TabsContent>
         </Tabs>

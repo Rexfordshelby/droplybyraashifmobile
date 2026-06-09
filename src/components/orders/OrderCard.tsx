@@ -21,6 +21,7 @@ import { saveOrderDraft } from '@/lib/orderDrafts';
 import { shareTrackingLink, buildTrackingUrl } from '@/lib/shareTracking';
 import { ShareReceiverCard } from './ShareReceiverCard';
 import { getProtectionLabel } from '@/lib/trustFeatures';
+import { RiderReviewCard } from './RiderReviewCard';
 
 interface OrderCardProps {
   order: Order;
@@ -335,7 +336,7 @@ export function OrderCard({
               <p className="font-semibold text-sm">Verify with receiver</p>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              Ask the receiver for the 4-digit OTP shown on their tracking screen.
+              Ask the receiver to show their QR, or enter the 4-digit OTP shown on their tracking screen.
             </p>
             <div className="mb-3 rounded-lg border bg-background/70 p-3">
               <div className="flex items-start justify-between gap-3">
@@ -378,7 +379,7 @@ export function OrderCard({
               trigger={
                 <Button className="w-full btn-gradient h-12 text-base">
                   <QrCode className="h-5 w-5 mr-2" />
-                  Enter delivery OTP
+                  Scan receiver QR / OTP
                 </Button>
               }
             />
@@ -678,19 +679,22 @@ export function OrderCard({
 
           {/* Delivered actions */}
           {order.status === 'delivered' && (
-            <div className="pt-3 border-t border-border grid grid-cols-2 gap-2">
-              <Button variant="outline" asChild>
-                <Link to={`/receipt/${order.id}`}>
-                  <Receipt className="h-4 w-4 mr-2" />
-                  Receipt
-                </Link>
-              </Button>
-              {!isRider && (
-                <Button onClick={handleSendAgain} className="btn-gradient">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Send again
+            <div className="pt-3 border-t border-border space-y-3">
+              {!isRider && order.rider_id && <RiderReviewCard order={order} />}
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" asChild>
+                  <Link to={`/receipt/${order.id}`}>
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Receipt
+                  </Link>
                 </Button>
-              )}
+                {!isRider && (
+                  <Button onClick={handleSendAgain} className="btn-gradient">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Send again
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 

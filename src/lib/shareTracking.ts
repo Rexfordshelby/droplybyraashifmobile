@@ -1,9 +1,41 @@
 /**
  * Build the public tracking URL for a given order tracking code.
  */
+const DEFAULT_PUBLIC_APP_URL = 'https://droplix.vercel.app';
+
+function normalizeOrigin(origin: string) {
+  return origin.replace(/\/+$/, '');
+}
+
+function isLocalOrAppOrigin(origin: string) {
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    return (
+      url.hostname === 'localhost'
+      || url.hostname === '127.0.0.1'
+      || url.hostname === '0.0.0.0'
+      || url.protocol === 'capacitor:'
+      || url.protocol === 'ionic:'
+      || url.protocol === 'file:'
+    );
+  } catch {
+    return true;
+  }
+}
+
+export function getPublicAppOrigin(): string {
+  const configured = normalizeOrigin(import.meta.env.VITE_PUBLIC_APP_URL || '');
+  if (configured) return configured;
+
+  const currentOrigin = typeof window !== 'undefined' ? normalizeOrigin(window.location.origin) : '';
+  if (!isLocalOrAppOrigin(currentOrigin)) return currentOrigin;
+
+  return DEFAULT_PUBLIC_APP_URL;
+}
+
 export function buildTrackingUrl(code: string): string {
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/t/${code}`;
+  return `${getPublicAppOrigin()}/t/${encodeURIComponent(code.trim().toUpperCase())}`;
 }
 
 /**
@@ -27,7 +59,7 @@ export async function shareTrackingLink(code: string, itemDescription?: string):
   }
 
   try {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(text);
     return 'copied';
   } catch {
     return 'failed';
