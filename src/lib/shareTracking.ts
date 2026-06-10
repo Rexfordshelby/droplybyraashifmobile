@@ -1,7 +1,7 @@
 /**
  * Build the public tracking URL for a given order tracking code.
  */
-const DEFAULT_PUBLIC_APP_URL = 'https://droplix.vercel.app';
+const DEFAULT_PUBLIC_APP_URL = 'https://droplixmumbai.vercel.app';
 
 function normalizeOrigin(origin: string) {
   return origin.replace(/\/+$/, '');
