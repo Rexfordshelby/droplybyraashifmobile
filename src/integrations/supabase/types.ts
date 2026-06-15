@@ -76,7 +76,10 @@ export type Database = {
           priority_fee: number
           scheduled_for: string | null
           business_order: boolean
+          business_account_id: string | null
+          business_batch_id: string | null
           business_name: string | null
+          order_channel: string
           multi_stop_count: number
           trusted_rider_required: boolean
           support_channel: string
@@ -126,7 +129,10 @@ export type Database = {
           priority_fee?: number
           scheduled_for?: string | null
           business_order?: boolean
+          business_account_id?: string | null
+          business_batch_id?: string | null
           business_name?: string | null
+          order_channel?: string
           multi_stop_count?: number
           trusted_rider_required?: boolean
           support_channel?: string
@@ -176,7 +182,10 @@ export type Database = {
           priority_fee?: number
           scheduled_for?: string | null
           business_order?: boolean
+          business_account_id?: string | null
+          business_batch_id?: string | null
           business_name?: string | null
+          order_channel?: string
           multi_stop_count?: number
           trusted_rider_required?: boolean
           support_channel?: string
@@ -275,6 +284,219 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      business_accounts: {
+        Row: {
+          address: string | null
+          approved_at: string | null
+          approved_by: string | null
+          business_type: string
+          city: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          default_order_channel: string
+          gst_number: string | null
+          id: string
+          monthly_volume_estimate: number
+          name: string
+          notes: string | null
+          owner_id: string | null
+          status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_type?: string
+          city?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_order_channel?: string
+          gst_number?: string | null
+          id?: string
+          monthly_volume_estimate?: number
+          name: string
+          notes?: string | null
+          owner_id?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_type?: string
+          city?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_order_channel?: string
+          gst_number?: string | null
+          id?: string
+          monthly_volume_estimate?: number
+          name?: string
+          notes?: string | null
+          owner_id?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_delivery_batches: {
+        Row: {
+          business_account_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          total_stops: number
+          updated_at: string
+        }
+        Insert: {
+          business_account_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          total_stops?: number
+          updated_at?: string
+        }
+        Update: {
+          business_account_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+          total_stops?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_inquiries: {
+        Row: {
+          business_account_id: string | null
+          business_name: string
+          business_type: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          created_by: string | null
+          estimated_orders_per_month: number
+          id: string
+          message: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_account_id?: string | null
+          business_name: string
+          business_type?: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          created_by?: string | null
+          estimated_orders_per_month?: number
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_account_id?: string | null
+          business_name?: string
+          business_type?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          created_by?: string | null
+          estimated_orders_per_month?: number
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_members: {
+        Row: {
+          business_account_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          business_account_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          business_account_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      free_delivery_claims: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          id: string
+          order_id: string | null
+          refund_reason: string | null
+          refunded_at: string | null
+          refunded_by: string | null
+          sender_phone: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          refunded_by?: string | null
+          sender_phone: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          refunded_by?: string | null
+          sender_phone?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       rider_reviews: {
         Row: {
@@ -495,8 +717,19 @@ export type Database = {
         Args: { _order_id?: string | null; _token: string; _token_type?: string }
         Returns: Json
       }
-      consume_free_delivery: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_business: {
+        Args: { _business_account_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      consume_free_delivery: {
+        Args: { _order_id: string; _sender_phone: string; _user_id: string }
+        Returns: boolean
+      }
       generate_tracking_code: { Args: never; Returns: string }
+      get_free_delivery_eligibility: {
+        Args: { _sender_phone?: string | null }
+        Returns: Json
+      }
       get_public_order: { Args: { _code: string }; Returns: Json }
       get_rider_trust_profile: { Args: { _rider_id: string }; Returns: Json }
       has_role: {
@@ -506,7 +739,15 @@ export type Database = {
         }
         Returns: boolean
       }
-      refund_free_delivery: { Args: { _user_id: string }; Returns: undefined }
+      is_business_member: {
+        Args: { _business_account_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      normalize_phone_10: { Args: { _phone: string }; Returns: string }
+      refund_free_delivery: {
+        Args: { _order_id?: string | null; _sender_phone?: string | null; _user_id: string }
+        Returns: undefined
+      }
       issue_order_qr_token: {
         Args: { _order_id: string; _token_type?: string; _ttl_seconds?: number }
         Returns: Json

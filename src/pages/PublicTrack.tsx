@@ -14,6 +14,7 @@ import {
   Flame,
   ShieldCheck,
   IndianRupee,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,11 +65,11 @@ interface PublicOrder {
 }
 
 const statusLabels: Record<OrderStatus, string> = {
-  pending: 'Finding a rider…',
+  pending: 'Finding a rider...',
   accepted: 'Rider on the way to pickup',
   picked: 'Parcel picked up',
   in_transit: 'On the way to you',
-  delivered: 'Delivered ✓',
+  delivered: 'Delivered',
   cancelled: 'Cancelled',
 };
 
@@ -85,11 +86,18 @@ export default function PublicTrack() {
   const { code } = useParams<{ code: string }>();
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [slowLoading, setSlowLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!code) return;
+
+    setLoading(true);
+    setSlowLoading(false);
+    setNotFound(false);
+    setBackendError(null);
 
     if (!isSupabaseConfigured) {
       setBackendError('Tracking is not connected to Supabase yet.');
@@ -99,8 +107,13 @@ export default function PublicTrack() {
 
     let isActive = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    const slowTimer = window.setTimeout(() => {
+      if (!isActive) return;
+      setSlowLoading(true);
+    }, 1500);
     const timeout = window.setTimeout(() => {
       if (!isActive) return;
+      window.clearTimeout(slowTimer);
       setBackendError('Tracking is taking too long to respond. Please try again in a moment.');
       setLoading(false);
     }, 8000);
@@ -108,6 +121,7 @@ export default function PublicTrack() {
     const load = async () => {
       const { data, error } = await supabase.rpc('get_public_order', { _code: code.toUpperCase() });
       if (!isActive) return;
+      window.clearTimeout(slowTimer);
       window.clearTimeout(timeout);
 
       if (error) {
@@ -143,18 +157,36 @@ export default function PublicTrack() {
     load();
     return () => {
       isActive = false;
+      window.clearTimeout(slowTimer);
       window.clearTimeout(timeout);
       if (channel) supabase.removeChannel(channel);
     };
-  }, [code]);
+  }, [code, retryKey]);
 
   if (loading) {
     return (
       <MainLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center space-y-3">
+          <div className="max-w-sm px-4 text-center space-y-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="text-sm text-muted-foreground">Checking tracking link...</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRetryKey((value) => value + 1)}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+            {slowLoading && (
+              <div className="rounded-lg border bg-card p-3">
+                <p className="text-sm font-medium">Still checking the live order.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  If your network is weak, retry once. We will show an error if tracking does not respond.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </MainLayout>
@@ -168,9 +200,15 @@ export default function PublicTrack() {
           <AlertTriangle className="h-12 w-12 mx-auto text-amber-600 mb-4" />
           <h1 className="font-heading text-2xl font-bold mb-2">Tracking unavailable</h1>
           <p className="text-muted-foreground mb-6">{backendError}</p>
-          <Button asChild>
-            <Link to="/">Go home</Link>
-          </Button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="button" variant="outline" onClick={() => setRetryKey((value) => value + 1)}>
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+            <Button asChild>
+              <Link to="/">Go home</Link>
+            </Button>
+          </div>
         </div>
       </MainLayout>
     );
@@ -183,7 +221,7 @@ export default function PublicTrack() {
           <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h1 className="font-heading text-2xl font-bold mb-2">Tracking link not found</h1>
           <p className="text-muted-foreground mb-6">
-            Double-check the code with the sender — it should be 8 characters like <span className="font-mono">A1B2C3D4</span>.
+            Double-check the code with the sender. It should be 8 characters like <span className="font-mono">A1B2C3D4</span>.
           </p>
           <Button asChild>
             <Link to="/">Go home</Link>
@@ -226,7 +264,7 @@ export default function PublicTrack() {
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 flex items-center gap-2">
                 <Gift className="h-5 w-5 text-emerald-600 shrink-0" />
                 <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  This delivery is FREE — paid by Droplix 🎁
+                  This delivery is FREE - paid by Droplix.
                 </p>
               </div>
             )}
@@ -291,7 +329,7 @@ export default function PublicTrack() {
                     Show the QR below or read this code to the rider to confirm delivery.
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    For your eyes only — do not share this code with anyone but the rider at your door.
+                    For your eyes only - do not share this code with anyone but the rider at your door.
                   </p>
                 </>
               ) : (
@@ -383,7 +421,7 @@ export default function PublicTrack() {
             {!order.is_promo_free && order.price_offered != null && (
               <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 text-sm">
                 <Wallet className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0" />
-                <span><strong className="text-amber-800 dark:text-amber-200">Cash on Delivery</strong> — pay rider ₹{order.price_offered} in cash</span>
+                <span><strong className="text-amber-800 dark:text-amber-200">Cash on Delivery</strong> - pay rider Rs {order.price_offered} in cash</span>
               </div>
             )}
           </CardContent>
@@ -400,7 +438,7 @@ export default function PublicTrack() {
                 <p className="font-medium">
                   {order.rider_name}
                   {order.rider_vehicle && (
-                    <span className="text-muted-foreground"> · {order.rider_vehicle}</span>
+                    <span className="text-muted-foreground"> - {order.rider_vehicle}</span>
                   )}
                 </p>
               </div>

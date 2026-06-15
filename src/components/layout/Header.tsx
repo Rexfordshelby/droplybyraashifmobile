@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, Menu, User, LogOut, Send, Bike, Home, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Bell, Menu, User, LogOut, Send, Bike, Home, LayoutDashboard, ShieldCheck, Store } from 'lucide-react';
 import { DroplixLogo } from '@/components/brand/DroplixLogo';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +54,12 @@ export function Header() {
                 <Button variant="ghost" size="sm" className={navButtonClass('/send')}>
                   <Send className="h-4 w-4" />
                   Send
+                </Button>
+              </Link>
+              <Link to="/business/dashboard">
+                <Button variant="ghost" size="sm" className={navButtonClass('/business/dashboard')}>
+                  <Store className="h-4 w-4" />
+                  Store
                 </Button>
               </Link>
               {isRider && (
@@ -153,6 +159,12 @@ export function Header() {
               <Link to="/auth?tab=signup">
                 <Button size="sm" className="btn-gradient h-10">Get Started</Button>
               </Link>
+              <Link to="/business">
+                <Button variant="outline" size="sm" className="h-10 gap-2">
+                  <Store className="h-4 w-4" />
+                  Business
+                </Button>
+              </Link>
             </>
           )}
         </nav>
@@ -187,6 +199,15 @@ export function Header() {
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     My Orders
+                  </Link>
+
+                  <Link
+                    to="/business/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                  >
+                    <Store className="h-5 w-5" />
+                    Store Dashboard
                   </Link>
                   
                   {isRider ? (
@@ -275,6 +296,14 @@ export function Header() {
                   >
                     <Bike className="h-5 w-5" />
                     Become a Rider
+                  </Link>
+                  <Link
+                    to="/business"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                  >
+                    <Store className="h-5 w-5" />
+                    Business
                   </Link>
                   <div className="border-t my-4" />
                   <Link 

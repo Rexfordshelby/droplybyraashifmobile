@@ -6,6 +6,7 @@ import {
   Activity,
   AlertTriangle,
   Bike,
+  Building2,
   CheckCircle,
   CircleDollarSign,
   ClipboardList,
@@ -20,6 +21,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
+  Store,
   Truck,
   UserCheck,
   Users,
@@ -39,7 +41,13 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useAdminData, type AdminRider, type ServiceZone } from '@/hooks/useAdminData';
+import {
+  useAdminData,
+  type AdminBusinessAccount,
+  type AdminBusinessInquiry,
+  type AdminRider,
+  type ServiceZone,
+} from '@/hooks/useAdminData';
 import { useAuth } from '@/hooks/useAuth';
 import type { Order, OrderStatus } from '@/hooks/useOrders';
 import { cn } from '@/lib/utils';
@@ -47,6 +55,8 @@ import { cn } from '@/lib/utils';
 type RiderFilter = 'all' | AdminRider['status'];
 type OrderFilter = 'all' | OrderStatus;
 type ZoneFilter = 'all' | 'active' | 'inactive';
+type BusinessFilter = 'all' | AdminBusinessAccount['status'];
+type InquiryFilter = 'all' | AdminBusinessInquiry['status'];
 
 const orderStatuses: OrderStatus[] = ['pending', 'accepted', 'picked', 'in_transit', 'delivered', 'cancelled'];
 
@@ -59,6 +69,10 @@ const statusTone: Record<string, string> = {
   cancelled: 'border-destructive/30 bg-destructive/10 text-destructive',
   approved: 'border-success/30 bg-success/10 text-success',
   suspended: 'border-destructive/30 bg-destructive/10 text-destructive',
+  rejected: 'border-destructive/30 bg-destructive/10 text-destructive',
+  new: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
+  reviewed: 'border-sky-500/30 bg-sky-500/10 text-sky-700',
+  converted: 'border-success/30 bg-success/10 text-success',
   active: 'border-success/30 bg-success/10 text-success',
   inactive: 'border-muted-foreground/30 bg-muted text-muted-foreground',
 };
@@ -178,6 +192,8 @@ export default function Admin() {
     riders,
     orders,
     zones,
+    businesses,
+    businessInquiries,
     stats,
     loading,
     approveRider,
@@ -185,6 +201,9 @@ export default function Admin() {
     updateOrderStatus,
     updateZone,
     createZone,
+    approveBusiness,
+    suspendBusiness,
+    updateBusinessInquiryStatus,
     refetch,
   } = useAdminData();
 
@@ -194,6 +213,9 @@ export default function Admin() {
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
   const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('all');
+  const [businessSearch, setBusinessSearch] = useState('');
+  const [businessFilter, setBusinessFilter] = useState<BusinessFilter>('all');
+  const [inquiryFilter, setInquiryFilter] = useState<InquiryFilter>('all');
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [adminRoleCheck, setAdminRoleCheck] = useState<'idle' | 'checking' | 'done'>('idle');
 
@@ -206,7 +228,7 @@ export default function Admin() {
   const priorityTrustOrders = orders.filter((order) => order.delivery_priority !== 'standard' || order.trusted_rider_required);
   const businessOrders = orders.filter((order) => order.business_order);
   const conversionRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
-  const queueHealth = stats.pendingOrders + stats.pendingRiders;
+  const queueHealth = stats.pendingOrders + stats.pendingRiders + stats.pendingBusinesses + stats.newBusinessInquiries;
 
   const filteredRiders = useMemo(() => {
     const query = riderSearch.trim().toLowerCase();
@@ -251,7 +273,30 @@ export default function Admin() {
     });
   }, [zoneFilter, zones]);
 
+  const filteredBusinesses = useMemo(() => {
+    const query = businessSearch.trim().toLowerCase();
+
+    return businesses.filter((business) => {
+      const matchesFilter = businessFilter === 'all' || business.status === businessFilter;
+      const matchesQuery =
+        !query ||
+        includesText(business.name, query) ||
+        includesText(business.contact_name, query) ||
+        includesText(business.contact_email, query) ||
+        includesText(business.contact_phone, query) ||
+        includesText(business.business_type, query) ||
+        includesText(business.city, query);
+
+      return matchesFilter && matchesQuery;
+    });
+  }, [businessFilter, businessSearch, businesses]);
+
+  const filteredBusinessInquiries = useMemo(() => {
+    return businessInquiries.filter((inquiry) => inquiryFilter === 'all' || inquiry.status === inquiryFilter);
+  }, [businessInquiries, inquiryFilter]);
+
   const pendingRiders = riders.filter((rider) => rider.status === 'pending');
+  const pendingBusinesses = businesses.filter((business) => business.status === 'pending');
   const priorityOrders = orders.filter((order) => ['pending', 'accepted', 'picked', 'in_transit'].includes(order.status));
   const issueOrders = orders
     .map((order) => ({ order, reason: getIssueReason(order) }))
@@ -353,6 +398,63 @@ export default function Admin() {
     );
   };
 
+  const renderBusinessActions = (business: AdminBusinessAccount) => {
+    const busy = actioningId === `business-${business.id}`;
+
+    if (business.status === 'approved') {
+      return (
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={Boolean(actioningId)}
+          onClick={() => void runAction(`business-${business.id}`, () => suspendBusiness(business.id))}
+        >
+          <XCircle className="h-4 w-4" />
+          {busy ? 'Saving' : 'Suspend'}
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        size="sm"
+        className="btn-shine"
+        disabled={Boolean(actioningId)}
+        onClick={() => void runAction(`business-${business.id}`, () => approveBusiness(business.id))}
+      >
+        <CheckCircle className="h-4 w-4" />
+        {busy ? 'Saving' : business.status === 'pending' ? 'Approve' : 'Reactivate'}
+      </Button>
+    );
+  };
+
+  const renderInquiryStatusControl = (inquiry: AdminBusinessInquiry) => {
+    const busy = actioningId === `inquiry-${inquiry.id}`;
+
+    return (
+      <Select
+        value={inquiry.status}
+        disabled={Boolean(actioningId)}
+        onValueChange={(value) =>
+          void runAction(`inquiry-${inquiry.id}`, () =>
+            updateBusinessInquiryStatus(inquiry.id, value as AdminBusinessInquiry['status']),
+          )
+        }
+      >
+        <SelectTrigger className="h-9 min-w-[148px] bg-background">
+          <SelectValue>{busy ? 'Updating' : formatLabel(inquiry.status)}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {(['new', 'reviewed', 'converted', 'rejected'] as AdminBusinessInquiry['status'][]).map((status) => (
+            <SelectItem key={status} value={status}>
+              {formatLabel(status)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   const renderOrderStatusControl = (order: Order) => {
     const nextStatuses = getNextOrderStatuses(order);
     const busy = actioningId === `order-${order.id}`;
@@ -447,7 +549,7 @@ export default function Admin() {
         </section>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-5 lg:w-auto">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4 xl:grid-cols-7">
             <TabsTrigger value="overview" className="h-10 gap-2 text-xs sm:text-sm">
               <Eye className="h-4 w-4" />
               Overview
@@ -460,6 +562,10 @@ export default function Admin() {
               <Package className="h-4 w-4" />
               Orders
             </TabsTrigger>
+            <TabsTrigger value="stores" className="h-10 gap-2 text-xs sm:text-sm">
+              <Store className="h-4 w-4" />
+              Stores
+            </TabsTrigger>
             <TabsTrigger value="zones" className="h-10 gap-2 text-xs sm:text-sm">
               <MapPin className="h-4 w-4" />
               Zones
@@ -467,6 +573,10 @@ export default function Admin() {
             <TabsTrigger value="issues" className="h-10 gap-2 text-xs sm:text-sm">
               <AlertTriangle className="h-4 w-4" />
               Issues
+            </TabsTrigger>
+            <TabsTrigger value="health" className="h-10 gap-2 text-xs sm:text-sm">
+              <ShieldCheck className="h-4 w-4" />
+              Health
             </TabsTrigger>
           </TabsList>
 
@@ -494,6 +604,13 @@ export default function Admin() {
                 tone={stats.pendingRiders > 0 ? 'warning' : 'success'}
               />
               <MetricCard
+                title="Store approvals"
+                value={stats.pendingBusinesses}
+                hint={`${stats.newBusinessInquiries} new store inquiries`}
+                icon={Store}
+                tone={stats.pendingBusinesses + stats.newBusinessInquiries > 0 ? 'warning' : 'success'}
+              />
+              <MetricCard
                 title="Cash handled"
                 value={formatCurrency(collectedAmount)}
                 hint={`${formatCurrency(platformCovered)} promo covered`}
@@ -509,7 +626,7 @@ export default function Admin() {
               <MetricCard
                 title="Business runs"
                 value={businessOrders.length}
-                hint="bulk, invoice-ready, or multi-stop orders"
+                hint={`${stats.totalBusinesses} approved stores`}
                 icon={ClipboardList}
                 tone={businessOrders.length > 0 ? 'warning' : 'default'}
               />
@@ -621,7 +738,7 @@ export default function Admin() {
                   Open work
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {stats.pendingOrders} orders and {stats.pendingRiders} rider applications need review.
+                  {stats.pendingOrders} orders, {stats.pendingRiders} rider applications, and {stats.pendingBusinesses} stores need review.
                 </p>
               </div>
             </div>
@@ -820,6 +937,153 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="stores" className="space-y-4">
+            <Card className="card-elevated">
+              <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Store and business accounts</CardTitle>
+                  <CardDescription>Approve B2P/B2B stores, monitor volume, and pause unsafe accounts</CardDescription>
+                </div>
+                <Badge variant="outline" className={cn(stats.pendingBusinesses > 0 ? statusTone.pending : statusTone.approved)}>
+                  {stats.pendingBusinesses} pending
+                </Badge>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={businessSearch}
+                      onChange={(event) => setBusinessSearch(event.target.value)}
+                      placeholder="Search store, owner, email, phone, type, city"
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={businessFilter} onValueChange={(value) => setBusinessFilter(value as BusinessFilter)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All stores</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {loading ? (
+                  <EmptyPanel icon={Store} title="Loading stores" detail="Fetching business accounts and approval status." />
+                ) : filteredBusinesses.length === 0 ? (
+                  <EmptyPanel icon={Building2} title="No stores found" detail="Try another search or filter." />
+                ) : (
+                  <div className="grid gap-3">
+                    {filteredBusinesses.map((business) => {
+                      const businessOrderCount = orders.filter((order) => order.business_account_id === business.id).length;
+
+                      return (
+                        <div
+                          key={business.id}
+                          className="grid gap-4 rounded-lg border bg-background/70 p-4 transition-colors hover:bg-muted/30 xl:grid-cols-[1fr_auto]"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate font-semibold">{business.name}</p>
+                              <StatusBadge status={business.status} />
+                              <Badge variant="outline" className="capitalize">
+                                {business.default_order_channel}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
+                              <span className="truncate">{business.contact_name || 'No contact name'}</span>
+                              <span className="truncate">{business.contact_email || 'No email'}</span>
+                              <span className="truncate">{business.contact_phone || 'No phone'}</span>
+                              <span className="truncate capitalize">{business.business_type}</span>
+                            </div>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                              <div className="rounded-lg bg-muted/50 p-2">
+                                <p className="text-xs text-muted-foreground">Monthly volume</p>
+                                <p className="font-semibold">{business.monthly_volume_estimate}</p>
+                              </div>
+                              <div className="rounded-lg bg-muted/50 p-2">
+                                <p className="text-xs text-muted-foreground">Orders booked</p>
+                                <p className="font-semibold">{businessOrderCount}</p>
+                              </div>
+                              <div className="rounded-lg bg-muted/50 p-2">
+                                <p className="text-xs text-muted-foreground">Joined</p>
+                                <p className="font-semibold">{formatRelative(business.created_at)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center xl:justify-end">{renderBusinessActions(business)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="card-elevated">
+              <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Store inquiries</CardTitle>
+                  <CardDescription>Public applications from shops, offices, and recurring delivery teams</CardDescription>
+                </div>
+                <Select value={inquiryFilter} onValueChange={(value) => setInquiryFilter(value as InquiryFilter)}>
+                  <SelectTrigger className="w-full sm:w-[190px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All inquiries</SelectItem>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <EmptyPanel icon={Building2} title="Loading inquiries" detail="Checking public business leads." />
+                ) : filteredBusinessInquiries.length === 0 ? (
+                  <EmptyPanel icon={CheckCircle} title="No inquiries found" detail="New store applications will appear here." />
+                ) : (
+                  <div className="grid gap-3">
+                    {filteredBusinessInquiries.slice(0, 50).map((inquiry) => (
+                      <div
+                        key={inquiry.id}
+                        className="grid gap-4 rounded-lg border bg-background/70 p-4 transition-colors hover:bg-muted/30 lg:grid-cols-[1fr_auto]"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-semibold">{inquiry.business_name}</p>
+                            <StatusBadge status={inquiry.status} />
+                            <Badge variant="outline" className="capitalize">
+                              {inquiry.business_type}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
+                            <span className="truncate">{inquiry.contact_name}</span>
+                            <span className="truncate">{inquiry.contact_email}</span>
+                            <span className="truncate">{inquiry.contact_phone}</span>
+                            <span>{inquiry.estimated_orders_per_month} orders/month</span>
+                          </div>
+                          {inquiry.message && (
+                            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{inquiry.message}</p>
+                          )}
+                          <p className="mt-2 text-xs text-muted-foreground">Applied {formatRelative(inquiry.created_at)}</p>
+                        </div>
+                        <div className="flex items-center lg:justify-end">{renderInquiryStatusControl(inquiry)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="zones" className="space-y-4">
             <Card className="card-elevated">
               <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -975,6 +1239,83 @@ export default function Admin() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="health" className="space-y-4">
+            <Card className="card-elevated">
+              <CardHeader>
+                <CardTitle>Platform health</CardTitle>
+                <CardDescription>Responsive QA, security controls, and launch-readiness checks for Droplix</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  {['360x740', '430x932', '768x1024', '1024x768', '1440x900'].map((size) => (
+                    <div key={size} className="rounded-lg border bg-background/70 p-3">
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Smartphone className="h-4 w-4 text-primary" />
+                        {size}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Home, send, rider, admin, track, and store views queued for every release.</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-lg border bg-background/70 p-4">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <ShieldCheck className="h-4 w-4 text-success" />
+                      Security controls
+                    </div>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      <li>RLS for orders, riders, stores, inquiries, claims, and memberships.</li>
+                      <li>One-time hashed QR tokens with expiry and OTP attempt lockouts.</li>
+                      <li>Two free deliveries max per account and per normalized sender phone.</li>
+                      <li>Admin-only approvals for riders, stores, service zones, and sensitive updates.</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-lg border bg-background/70 p-4">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Store className="h-4 w-4 text-primary" />
+                      Store system
+                    </div>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      <li>Public store inquiry and authenticated store dashboard are available.</li>
+                      <li>Approved stores can book B2P and B2B orders with business IDs attached.</li>
+                      <li>Admin can approve, suspend, search, and prioritize business accounts.</li>
+                      <li>Bulk delivery batches and business order history are modelled in Supabase.</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-lg border bg-background/70 p-4">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <ClipboardList className="h-4 w-4 text-amber-600" />
+                      Release checks
+                    </div>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      <li>Run lint, typecheck, production build, audit, and route screenshots before deploy.</li>
+                      <li>Verify public tracking never stays stuck without retry or error feedback.</li>
+                      <li>Confirm riders see pending eligible orders after order creation.</li>
+                      <li>Keep service-role secrets and database passwords out of frontend code.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border bg-muted/30 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-semibold">Detailed report</p>
+                      <p className="text-sm text-muted-foreground">
+                        See docs/DROPLIX_PRODUCT_SECURITY_REPORT.md for feature inventory, route QA, backend controls, and follow-ups.
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="w-fit border-success/30 bg-success/10 text-success">
+                      Migration ready
+                    </Badge>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

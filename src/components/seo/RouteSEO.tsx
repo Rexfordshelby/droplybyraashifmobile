@@ -27,6 +27,24 @@ function getMetaForPath(pathname: string): MetaConfig {
     };
   }
 
+  if (pathname === '/business') {
+    return {
+      title: 'Droplix for Business | Store Parcel Delivery in Mumbai',
+      description:
+        'Connect your Mumbai store with Droplix for B2P customer deliveries, B2B supplier runs, multi-stop batches, receipts, and proof-first parcel handoffs.',
+      canonical: `${SITE_URL}/business`,
+    };
+  }
+
+  if (pathname === '/business/apply') {
+    return {
+      title: 'Connect Your Store with Droplix | Business Delivery Mumbai',
+      description:
+        'Apply for Droplix business delivery in Mumbai. Get store delivery tools for customer parcels, supplier runs, proof, support, and order history.',
+      canonical: `${SITE_URL}/business/apply`,
+    };
+  }
+
   if (pathname === '/') return defaultMeta;
 
   return {

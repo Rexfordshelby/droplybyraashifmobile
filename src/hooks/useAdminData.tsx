@@ -31,6 +31,35 @@ export interface ServiceZone {
   created_at: string;
 }
 
+export interface AdminBusinessAccount {
+  id: string;
+  owner_id: string | null;
+  name: string;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  business_type: string;
+  city: string;
+  status: 'pending' | 'approved' | 'suspended' | 'rejected';
+  default_order_channel: 'b2p' | 'b2b';
+  monthly_volume_estimate: number;
+  created_at: string;
+}
+
+export interface AdminBusinessInquiry {
+  id: string;
+  business_name: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  business_type: string;
+  estimated_orders_per_month: number;
+  message: string | null;
+  status: 'new' | 'reviewed' | 'converted' | 'rejected';
+  created_by: string | null;
+  created_at: string;
+}
+
 interface AdminStats {
   totalOrders: number;
   pendingOrders: number;
@@ -38,12 +67,17 @@ interface AdminStats {
   onlineRiders: number;
   pendingRiders: number;
   deliveredToday: number;
+  totalBusinesses: number;
+  pendingBusinesses: number;
+  newBusinessInquiries: number;
 }
 
 export function useAdminData() {
   const [riders, setRiders] = useState<AdminRider[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [zones, setZones] = useState<ServiceZone[]>([]);
+  const [businesses, setBusinesses] = useState<AdminBusinessAccount[]>([]);
+  const [businessInquiries, setBusinessInquiries] = useState<AdminBusinessInquiry[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalOrders: 0,
     pendingOrders: 0,
@@ -51,6 +85,9 @@ export function useAdminData() {
     onlineRiders: 0,
     pendingRiders: 0,
     deliveredToday: 0,
+    totalBusinesses: 0,
+    pendingBusinesses: 0,
+    newBusinessInquiries: 0,
   });
   const [loading, setLoading] = useState(true);
   const { user, hasRole } = useAuth();
@@ -114,6 +151,34 @@ export function useAdminData() {
     return data as ServiceZone[];
   }, []);
 
+  const fetchBusinesses = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('business_accounts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching business accounts:', error);
+      return [];
+    }
+
+    return (data || []) as AdminBusinessAccount[];
+  }, []);
+
+  const fetchBusinessInquiries = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('business_inquiries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching business inquiries:', error);
+      return [];
+    }
+
+    return (data || []) as AdminBusinessInquiry[];
+  }, []);
+
   const fetchAll = useCallback(async () => {
     if (!user || !hasRole('admin')) {
       setLoading(false);
@@ -122,15 +187,19 @@ export function useAdminData() {
 
     setLoading(true);
     
-    const [ridersData, ordersData, zonesData] = await Promise.all([
+    const [ridersData, ordersData, zonesData, businessesData, inquiriesData] = await Promise.all([
       fetchRiders(),
       fetchOrders(),
       fetchZones(),
+      fetchBusinesses(),
+      fetchBusinessInquiries(),
     ]);
 
     setRiders(ridersData);
     setOrders(ordersData);
     setZones(zonesData);
+    setBusinesses(businessesData);
+    setBusinessInquiries(inquiriesData);
 
     // Calculate stats
     const today = new Date();
@@ -147,10 +216,13 @@ export function useAdminData() {
         o.delivered_at && 
         new Date(o.delivered_at) >= today
       ).length,
+      totalBusinesses: businessesData.filter(b => b.status === 'approved').length,
+      pendingBusinesses: businessesData.filter(b => b.status === 'pending').length,
+      newBusinessInquiries: inquiriesData.filter(i => i.status === 'new').length,
     });
 
     setLoading(false);
-  }, [fetchOrders, fetchRiders, fetchZones, hasRole, user]);
+  }, [fetchBusinessInquiries, fetchBusinesses, fetchOrders, fetchRiders, fetchZones, hasRole, user]);
 
   const approveRider = async (riderId: string) => {
     const rider = riders.find(r => r.id === riderId);
@@ -296,6 +368,72 @@ export function useAdminData() {
     await fetchAll();
   };
 
+  const approveBusiness = async (businessId: string) => {
+    const business = businesses.find((item) => item.id === businessId);
+    const { error } = await supabase
+      .from('business_accounts')
+      .update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: user?.id ?? null })
+      .eq('id', businessId);
+
+    if (error) {
+      toast({
+        title: 'Could not approve business',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (business?.owner_id) {
+      await supabase.from('business_members').upsert({
+        business_account_id: business.id,
+        user_id: business.owner_id,
+        role: 'owner',
+      }, { onConflict: 'business_account_id,user_id' });
+    }
+
+    toast({ title: 'Business approved', description: 'The store can now create B2P/B2B deliveries.' });
+    await fetchAll();
+  };
+
+  const suspendBusiness = async (businessId: string) => {
+    const { error } = await supabase
+      .from('business_accounts')
+      .update({ status: 'suspended', suspended_at: new Date().toISOString(), suspended_by: user?.id ?? null })
+      .eq('id', businessId);
+
+    if (error) {
+      toast({
+        title: 'Could not suspend business',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'Business suspended', description: 'Business ordering access is paused.' });
+    await fetchAll();
+  };
+
+  const updateBusinessInquiryStatus = async (inquiryId: string, status: AdminBusinessInquiry['status']) => {
+    const { error } = await supabase
+      .from('business_inquiries')
+      .update({ status })
+      .eq('id', inquiryId);
+
+    if (error) {
+      toast({
+        title: 'Inquiry not updated',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'Inquiry updated', description: `Marked as ${status}.` });
+    await fetchAll();
+  };
+
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
@@ -304,6 +442,8 @@ export function useAdminData() {
     riders,
     orders,
     zones,
+    businesses,
+    businessInquiries,
     stats,
     loading,
     approveRider,
@@ -311,6 +451,9 @@ export function useAdminData() {
     updateOrderStatus,
     updateZone,
     createZone,
+    approveBusiness,
+    suspendBusiness,
+    updateBusinessInquiryStatus,
     refetch: fetchAll,
   };
 }

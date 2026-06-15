@@ -17,6 +17,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SendParcel = lazy(() => import("./pages/SendParcel"));
 const RiderDashboard = lazy(() => import("./pages/RiderDashboard"));
 const BecomeRider = lazy(() => import("./pages/BecomeRider"));
+const Business = lazy(() => import("./pages/Business"));
+const BusinessApply = lazy(() => import("./pages/BusinessApply"));
+const BusinessDashboard = lazy(() => import("./pages/BusinessDashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -102,6 +105,9 @@ const App = () => {
                 <Route path="/send" element={<SendParcel />} />
                 <Route path="/rider" element={<RiderDashboard />} />
                 <Route path="/become-rider" element={<BecomeRider />} />
+                <Route path="/business" element={<Business />} />
+                <Route path="/business/apply" element={<BusinessApply />} />
+                <Route path="/business/dashboard" element={<BusinessDashboard />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/profile" element={<Profile />} />

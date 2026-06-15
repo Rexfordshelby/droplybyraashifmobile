@@ -20,6 +20,7 @@ type SupabaseErrorLike = {
 };
 
 export type OrderStatus = 'pending' | 'accepted' | 'picked' | 'in_transit' | 'delivered' | 'cancelled';
+export type OrderChannel = 'p2p' | 'b2p' | 'b2b';
 
 export interface Order {
   id: string;
@@ -61,7 +62,10 @@ export interface Order {
   priority_fee: number;
   scheduled_for: string | null;
   business_order: boolean;
+  business_account_id: string | null;
+  business_batch_id: string | null;
   business_name: string | null;
+  order_channel: OrderChannel;
   multi_stop_count: number;
   trusted_rider_required: boolean;
   support_channel: SupportChannel;
@@ -121,7 +125,10 @@ export const ORDER_SELECT = `
   priority_fee,
   scheduled_for,
   business_order,
+  business_account_id,
+  business_batch_id,
   business_name,
+  order_channel,
   multi_stop_count,
   trusted_rider_required,
   support_channel,
@@ -147,7 +154,10 @@ export function normalizeOrder(order: OrderWithoutOtp | Order): Order {
     priority_fee: Number(order.priority_fee ?? 0),
     scheduled_for: order.scheduled_for ?? null,
     business_order: order.business_order ?? false,
+    business_account_id: order.business_account_id ?? null,
+    business_batch_id: order.business_batch_id ?? null,
     business_name: order.business_name ?? null,
+    order_channel: (order.order_channel as OrderChannel | null) ?? (order.business_order ? 'b2p' : 'p2p'),
     multi_stop_count: Number(order.multi_stop_count ?? 1),
     trusted_rider_required: order.trusted_rider_required ?? false,
     support_channel: order.support_channel ?? 'whatsapp',
@@ -417,7 +427,10 @@ export function useOrders() {
     priority_fee?: number;
     scheduled_for?: string | null;
     business_order?: boolean;
+    business_account_id?: string | null;
+    business_batch_id?: string | null;
     business_name?: string | null;
+    order_channel?: OrderChannel;
     multi_stop_count?: number;
     trusted_rider_required?: boolean;
     support_channel?: SupportChannel;
@@ -461,7 +474,10 @@ export function useOrders() {
         priority_fee: orderData.priority_fee ?? 0,
         scheduled_for: orderData.scheduled_for ?? null,
         business_order: orderData.business_order ?? false,
+        business_account_id: orderData.business_account_id ?? null,
+        business_batch_id: orderData.business_batch_id ?? null,
         business_name: orderData.business_name ?? null,
+        order_channel: orderData.order_channel ?? (orderData.business_order ? 'b2p' : 'p2p'),
         multi_stop_count: orderData.multi_stop_count ?? 1,
         trusted_rider_required: orderData.trusted_rider_required ?? false,
         support_channel: orderData.support_channel ?? 'whatsapp',

@@ -10,5 +10,6 @@ Disallow: /send
 Disallow: /track/
 Disallow: /t/
 Disallow: /auth
+Disallow: /business/dashboard
 
 Sitemap: https://droplixmumbai.vercel.app/sitemap.xml

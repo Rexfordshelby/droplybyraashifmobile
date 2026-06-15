@@ -54,9 +54,10 @@ import {
 } from '@/components/ui/form';
 import { useOrders } from '@/hooks/useOrders';
 import { useServiceZones } from '@/hooks/useServiceZones';
-import { usePromos } from '@/hooks/usePromos';
+import { type FreeDeliveryEligibility, usePromos } from '@/hooks/usePromos';
+import { useBusiness } from '@/hooks/useBusiness';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LiabilityDisclaimer } from './LiabilityDisclaimer';
 import { MumbaiAreaPicker } from './MumbaiAreaPicker';
 import { MUMBAI_AREAS, MumbaiArea, haversineKm, findMumbaiArea } from '@/data/mumbaiAreas';
@@ -92,7 +93,10 @@ const formSchema = z.object({
   delivery_priority: z.enum(['standard', 'scheduled', 'emergency']).default('standard'),
   scheduled_for: z.string().optional(),
   business_order: z.boolean().default(false),
+  business_account_id: z.string().optional(),
+  business_batch_id: z.string().optional(),
   business_name: z.string().optional(),
+  order_channel: z.enum(['p2p', 'b2p', 'b2b']).default('p2p'),
   multi_stop_count: z.number().min(1).max(8).default(1),
   trusted_rider_required: z.boolean().default(false),
   support_channel: z.enum(['whatsapp', 'call']).default('whatsapp'),
@@ -184,7 +188,8 @@ function getItemSafety(description: string) {
 export function CreateOrderForm() {
   const { createOrder } = useOrders();
   const { zones, calculatePrice } = useServiceZones();
-  const { freeRemaining, refetch: refetchPromo } = usePromos();
+  const { freeRemaining, checkFreeDeliveryEligibility, refetch: refetchPromo } = usePromos();
+  const { accounts: businessAccounts } = useBusiness();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,6 +203,15 @@ export function CreateOrderForm() {
   const [itemPhoto, setItemPhoto] = useState<File | null>(null);
   const [itemPhotoPreview, setItemPhotoPreview] = useState<string | null>(null);
   const [orderMemory, setOrderMemory] = useState<OrderMemory>(() => readOrderMemory());
+  const [freeEligibility, setFreeEligibility] = useState<FreeDeliveryEligibility>({
+    eligible: false,
+    remaining: 0,
+    accountRemaining: freeRemaining,
+    phoneRemaining: 0,
+    normalizedPhone: null,
+    phoneRequired: true,
+    reason: null,
+  });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -220,9 +234,6 @@ export function CreateOrderForm() {
     setItemPhotoPreview(null);
   };
 
-  // Use free delivery if available
-  const useFreeDelivery = freeRemaining > 0;
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -242,7 +253,10 @@ export function CreateOrderForm() {
       delivery_priority: 'standard',
       scheduled_for: '',
       business_order: false,
+      business_account_id: '',
+      business_batch_id: '',
       business_name: '',
+      order_channel: 'p2p',
       multi_stop_count: 1,
       trusted_rider_required: false,
       support_channel: 'whatsapp',
@@ -270,7 +284,10 @@ export function CreateOrderForm() {
       delivery_priority: 'standard',
       scheduled_for: '',
       business_order: false,
+      business_account_id: '',
+      business_batch_id: '',
       business_name: '',
+      order_channel: 'p2p',
       multi_stop_count: 1,
       trusted_rider_required: false,
       support_channel: 'whatsapp',
@@ -305,26 +322,80 @@ export function CreateOrderForm() {
   const estimatedDistance = form.watch('estimated_distance');
   const suggestedPrice = calculatePrice(mumbaiZone, estimatedDistance);
   const minimumPrice = Math.round(suggestedPrice);
+  const priceOffered = form.watch('price_offered');
+  const itemDescription = form.watch('item_description');
+  const itemCategory = form.watch('item_category');
+  const itemValue = form.watch('item_value');
+  const isFragile = form.watch('is_fragile');
+  const senderPhone = form.watch('sender_phone');
+  const protectionTier = form.watch('protection_tier') as ProtectionTier;
+  const deliveryPriority = form.watch('delivery_priority') as DeliveryPriority;
+  const scheduledFor = form.watch('scheduled_for');
+  const businessOrder = form.watch('business_order');
+  const businessAccountId = form.watch('business_account_id');
+  const orderChannel = form.watch('order_channel');
+  const multiStopCount = form.watch('multi_stop_count');
+  const trustedRiderRequired = form.watch('trusted_rider_required');
+  const supportChannel = form.watch('support_channel') as SupportChannel;
+  const approvedBusinessAccounts = useMemo(
+    () => businessAccounts.filter((account) => account.status === 'approved'),
+    [businessAccounts],
+  );
+  const selectedBusinessAccount = approvedBusinessAccounts.find((account) => account.id === businessAccountId) ?? null;
+  const businessNeedsApprovedAccount = businessOrder && approvedBusinessAccounts.length === 0;
+  const businessMissingSelection = businessOrder && approvedBusinessAccounts.length > 0 && !businessAccountId;
+  const useFreeDelivery = !businessOrder && freeEligibility.eligible && freeEligibility.remaining > 0;
 
-  // Keep price_offered in sync with suggested price when promo is used
+  useEffect(() => {
+    const digits = senderPhone.replace(/\D/g, '');
+    if (freeRemaining <= 0 || digits.length < 10) {
+      setFreeEligibility({
+        eligible: false,
+        remaining: 0,
+        accountRemaining: freeRemaining,
+        phoneRemaining: 0,
+        normalizedPhone: digits.length >= 10 ? digits.slice(-10) : null,
+        phoneRequired: digits.length < 10,
+        reason: digits.length < 10 ? 'Enter your 10-digit phone to check free delivery.' : null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      checkFreeDeliveryEligibility(senderPhone).then((result) => {
+        if (!cancelled) setFreeEligibility(result);
+      });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [checkFreeDeliveryEligibility, freeRemaining, senderPhone]);
+
+  useEffect(() => {
+    if (businessOrder && approvedBusinessAccounts.length === 1 && !businessAccountId) {
+      const account = approvedBusinessAccounts[0];
+      form.setValue('business_account_id', account.id);
+      form.setValue('business_name', account.name);
+      form.setValue('order_channel', account.default_order_channel || 'b2p');
+    }
+
+    if (!businessOrder) {
+      form.setValue('business_account_id', '');
+      form.setValue('business_batch_id', '');
+      form.setValue('order_channel', 'p2p');
+    }
+  }, [approvedBusinessAccounts, businessAccountId, businessOrder, form]);
+
+  // Keep price_offered in sync with suggested price when promo is used.
   useEffect(() => {
     if (useFreeDelivery) {
       form.setValue('price_offered', minimumPrice);
     }
   }, [useFreeDelivery, minimumPrice, form]);
 
-  const priceOffered = form.watch('price_offered');
-  const itemDescription = form.watch('item_description');
-  const itemCategory = form.watch('item_category');
-  const itemValue = form.watch('item_value');
-  const isFragile = form.watch('is_fragile');
-  const protectionTier = form.watch('protection_tier') as ProtectionTier;
-  const deliveryPriority = form.watch('delivery_priority') as DeliveryPriority;
-  const scheduledFor = form.watch('scheduled_for');
-  const businessOrder = form.watch('business_order');
-  const multiStopCount = form.watch('multi_stop_count');
-  const trustedRiderRequired = form.watch('trusted_rider_required');
-  const supportChannel = form.watch('support_channel') as SupportChannel;
   const itemSafety = useMemo(() => getItemSafety(itemDescription || ''), [itemDescription]);
   const protectionQuote = useMemo(() => getProtectionQuote(protectionTier, itemValue), [itemValue, protectionTier]);
   const priorityFee = getPriorityFee(deliveryPriority);
@@ -341,16 +412,21 @@ export function CreateOrderForm() {
   const scheduleMissing = deliveryPriority === 'scheduled' && !scheduledFor;
   const currentStepMeta = steps[currentStep - 1];
   const CurrentStepIcon = currentStepMeta.icon;
-  const canSubmitOrder = liabilityAccepted && !priceTooLow && !itemBlocked && !scheduleMissing;
+  const businessBlocked = businessNeedsApprovedAccount || businessMissingSelection;
+  const canSubmitOrder = liabilityAccepted && !priceTooLow && !itemBlocked && !scheduleMissing && !businessBlocked;
   const submitHelpText = itemBlocked
     ? 'This item cannot be sent through Droplix. Check the item description and declared value before booking.'
     : priceTooLow
       ? `Offer at least Rs ${minimumPrice} so riders see a fair payout.`
       : scheduleMissing
         ? 'Choose a pickup slot for scheduled delivery.'
-        : !liabilityAccepted
-          ? 'Accept the safety terms before sending this order live.'
-          : null;
+        : businessNeedsApprovedAccount
+          ? 'Create and get an approved store profile before using business delivery.'
+          : businessMissingSelection
+            ? 'Choose the approved store account for this business delivery.'
+            : !liabilityAccepted
+              ? 'Accept the safety terms before sending this order live.'
+              : null;
 
   const applyRememberedAddress = (field: 'pickup_address' | 'drop_address', address: string) => {
     form.setValue(field, address, { shouldDirty: true, shouldValidate: true });
@@ -432,6 +508,19 @@ export function CreateOrderForm() {
       return;
     }
 
+    if (businessBlocked) {
+      const message = businessNeedsApprovedAccount
+        ? 'Create and get an approved store profile before using business delivery.'
+        : 'Choose an approved store account for this business delivery.';
+      setSubmitError(message);
+      toast({
+        title: 'Business approval required',
+        description: message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -464,7 +553,12 @@ export function CreateOrderForm() {
         priority_fee: priorityFee,
         scheduled_for: values.delivery_priority === 'scheduled' ? values.scheduled_for || null : null,
         business_order: values.business_order,
-        business_name: values.business_order ? values.business_name || null : null,
+        business_account_id: values.business_order ? values.business_account_id || null : null,
+        business_batch_id: values.business_order ? values.business_batch_id || null : null,
+        business_name: values.business_order
+          ? selectedBusinessAccount?.name || values.business_name || null
+          : null,
+        order_channel: values.business_order ? values.order_channel : 'p2p',
         multi_stop_count: values.business_order ? values.multi_stop_count : 1,
         trusted_rider_required: values.trusted_rider_required || values.protection_tier === 'premium',
         support_channel: values.support_channel,
@@ -522,12 +616,20 @@ export function CreateOrderForm() {
             </div>
             <div className="min-w-0">
               <p className="font-bold text-emerald-700 dark:text-emerald-300">
-                🎁 You have {freeRemaining} FREE {freeRemaining === 1 ? 'delivery' : 'deliveries'} left!
+                🎁 You have {freeEligibility.remaining} FREE {freeEligibility.remaining === 1 ? 'delivery' : 'deliveries'} left!
               </p>
               <p className="text-sm text-muted-foreground">
-                This order is on us. You pay ₹0.
+                This account and sender phone are eligible. This delivery is on us.
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+      {!useFreeDelivery && freeRemaining > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/10">
+          <CardContent className="py-3 text-sm text-amber-900 dark:text-amber-100">
+            Enter your 10-digit sender phone to unlock free delivery. Each account and phone can use only 2 free deliveries.
+            {freeEligibility.reason && <span className="ml-1 font-medium">{freeEligibility.reason}</span>}
           </CardContent>
         </Card>
       )}
@@ -1112,7 +1214,28 @@ export function CreateOrderForm() {
                       render={({ field }) => (
                         <FormItem className="flex items-start gap-3 rounded-lg border bg-background/80 p-4">
                           <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                const enabled = checked === true;
+                                field.onChange(enabled);
+                                if (!enabled) {
+                                  form.setValue('business_account_id', '');
+                                  form.setValue('business_batch_id', '');
+                                  form.setValue('business_name', '');
+                                  form.setValue('order_channel', 'p2p');
+                                  return;
+                                }
+                                const account = approvedBusinessAccounts[0];
+                                if (account) {
+                                  form.setValue('business_account_id', account.id);
+                                  form.setValue('business_name', account.name);
+                                  form.setValue('order_channel', account.default_order_channel || 'b2p');
+                                } else {
+                                  form.setValue('order_channel', 'b2p');
+                                }
+                              }}
+                            />
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="flex items-center gap-2">
@@ -1181,6 +1304,77 @@ export function CreateOrderForm() {
 
                   {businessOrder && (
                     <div className="grid gap-3 rounded-lg border bg-primary/5 p-4 md:grid-cols-2">
+                      {approvedBusinessAccounts.length > 0 ? (
+                        <FormField
+                          control={form.control}
+                          name="business_account_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Approved store account</FormLabel>
+                              <Select
+                                value={field.value || undefined}
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  const account = approvedBusinessAccounts.find((item) => item.id === value);
+                                  if (account) {
+                                    form.setValue('business_name', account.name);
+                                    form.setValue('order_channel', account.default_order_channel || 'b2p');
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Choose store" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {approvedBusinessAccounts.map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>Only approved stores can create B2P/B2B deliveries.</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 p-3 md:col-span-2">
+                          <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Store approval required</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Create your store profile and wait for admin approval before booking business deliveries.
+                          </p>
+                          <Button asChild size="sm" variant="outline" className="mt-3">
+                            <Link to="/business/dashboard">Open store portal</Link>
+                          </Button>
+                        </div>
+                      )}
+
+                      <FormField
+                        control={form.control}
+                        name="order_channel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Delivery channel</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger className="bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="b2p">B2P - business to customer</SelectItem>
+                                <SelectItem value="b2b">B2B - business to business</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>{orderChannel === 'b2b' ? 'Best for shops, offices, vendors, and suppliers.' : 'Best for customer deliveries.'}</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <FormField
                         control={form.control}
                         name="business_name"
@@ -1513,7 +1707,7 @@ export function CreateOrderForm() {
                       type="submit"
                       className={`btn-gradient btn-shine min-w-[210px] ${canSubmitOrder ? 'shadow-lg' : ''}`}
                       size="lg"
-                      disabled={isSubmitting || priceTooLow || itemBlocked || scheduleMissing}
+                      disabled={isSubmitting || priceTooLow || itemBlocked || scheduleMissing || businessBlocked}
                       aria-describedby={submitHelpText ? 'submit-help' : undefined}
                     >
                       {isSubmitting ? (
