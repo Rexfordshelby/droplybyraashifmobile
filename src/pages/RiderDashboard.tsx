@@ -151,7 +151,6 @@ export default function RiderDashboard() {
     : 0;
 
   const demandLabel = pendingQueue.length >= 4 ? "High demand" : pendingQueue.length > 0 ? "Orders waiting" : "Calm";
-  const demandTone = pendingQueue.length >= 4 ? "text-emerald-700" : pendingQueue.length > 0 ? "text-primary" : "text-muted-foreground";
 
   const readinessItems = [
     {
@@ -216,67 +215,63 @@ export default function RiderDashboard() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-6 md:py-8">
-        <section className="mb-6 overflow-hidden rounded-lg border bg-card/90 shadow-sm backdrop-blur">
-          <div className="h-1 bg-gradient-to-r from-primary via-emerald-400 to-warning" />
-          <div className="grid gap-5 p-5 lg:grid-cols-[1fr_320px] lg:p-6">
+      <div className="app-screen container app-page-stack max-w-7xl py-4 md:py-8">
+        <section className="app-hero p-5 sm:p-6">
+          <div className="grid gap-5 lg:grid-cols-[1fr_340px] lg:items-stretch">
             <div className="space-y-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <div className="app-hero-chip mb-4">
                     <Bike className="h-4 w-4" />
                     Rider command center
                   </div>
-                  <h1 className="font-heading text-3xl font-bold">Rider Dashboard</h1>
-                  <p className="mt-2 max-w-2xl text-muted-foreground">
+                  <h1 className="font-heading text-3xl font-extrabold sm:text-4xl">Ride flow, simplified</h1>
+                  <p className="app-hero-subtle mt-2 max-w-2xl text-sm leading-6 sm:text-base">
                     Stay online, pick one clean delivery, verify pickup, then finish with receiver OTP.
                   </p>
                 </div>
-                <Badge variant={rider.is_online ? "default" : "secondary"} className="w-fit gap-1.5">
+                <Badge variant={rider.is_online ? "default" : "secondary"} className="w-fit gap-1.5 rounded-full bg-white/15 text-white">
                   <Radio className={`h-3.5 w-3.5 ${rider.is_online ? "animate-soft-pulse" : ""}`} />
                   {rider.is_online ? "Live" : "Paused"}
                 </Badge>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="stat-tile">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Queue</span>
-                    <Activity className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="text-2xl font-bold">{pendingQueue.length}</p>
-                  <p className={`mt-1 text-xs font-medium ${demandTone}`}>{demandLabel}</p>
-                </div>
-                <div className="stat-tile">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Current</span>
-                    <Navigation className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="text-2xl font-bold">{activeOrders.length}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Single delivery mode</p>
-                </div>
-                <div className="stat-tile">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Average payout</span>
-                    <Wallet className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="flex items-center text-2xl font-bold">
-                    <IndianRupee className="h-5 w-5" />
-                    {averagePayout}
+              <div className="app-metric-grid">
+                <div className="app-metric-tile">
+                  <span>Queue</span>
+                  <strong>{pendingQueue.length}</strong>
+                  <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                    <Activity className="h-3.5 w-3.5" />
+                    {demandLabel}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">From today&apos;s deliveries</p>
+                </div>
+                <div className="app-metric-tile">
+                  <span>Current</span>
+                  <strong>{activeOrders.length}</strong>
+                  <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                    <Navigation className="h-3.5 w-3.5" />
+                    One focus
+                  </p>
+                </div>
+                <div className="app-metric-tile">
+                  <span>Avg pay</span>
+                  <strong>{averagePayout}</strong>
+                  <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                    <Wallet className="h-3.5 w-3.5" />
+                    Today
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className={`rounded-lg border p-4 ${rider.is_online ? "border-emerald-500/40 bg-emerald-500/10" : "bg-background/80"}`}>
+            <div className={`rounded-2xl border p-4 backdrop-blur-xl ${rider.is_online ? "border-white/30 bg-white/18" : "border-white/18 bg-white/12"}`}>
               <div className="flex items-center gap-4">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md ${rider.is_online ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${rider.is_online ? "bg-white text-primary" : "bg-white/14 text-white"}`}>
                   {isSavingStatus ? <Loader2 className="h-5 w-5 animate-spin" /> : <Power className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{rider.is_online ? "Online and available" : "Offline"}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-semibold text-white">{rider.is_online ? "Online and available" : "Offline"}</p>
+                  <p className="text-xs text-white/70">
                     {rider.is_online ? "New orders can appear instantly" : "Switch on when you are ready"}
                   </p>
                 </div>
@@ -289,15 +284,15 @@ export default function RiderDashboard() {
 
               <div className="mt-4 space-y-2">
                 {readinessItems.map((item) => (
-                  <div key={item.label} className="flex items-start gap-2 rounded-lg bg-background/70 p-2.5">
+                  <div key={item.label} className="flex items-start gap-2 rounded-xl border border-white/12 bg-white/12 p-2.5">
                     {item.ready ? (
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-white" />
                     ) : (
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.detail}</p>
+                      <p className="text-sm font-medium text-white">{item.label}</p>
+                      <p className="text-xs text-white/68">{item.detail}</p>
                     </div>
                   </div>
                 ))}
@@ -306,7 +301,7 @@ export default function RiderDashboard() {
           </div>
         </section>
 
-        <section className="mb-6 rounded-lg border bg-card/90 p-4 shadow-sm md:p-5">
+        <section className="app-card p-4 md:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -320,7 +315,7 @@ export default function RiderDashboard() {
               <h2 className="font-heading text-xl font-semibold">
                 {focusOrder ? getRiderNextAction(focusOrder.status) : "Stay ready for the next order."}
               </h2>
-              <p className="mt-1 truncate text-sm text-muted-foreground">
+              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                 {focusOrder
                   ? `${focusOrder.pickup_address} -> ${focusOrder.drop_address}`
                   : rider.is_online
@@ -330,11 +325,11 @@ export default function RiderDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:min-w-[300px]">
-              <div className="rounded-md border bg-background/80 p-3">
+              <div className="rounded-2xl border bg-background/80 p-3">
                 <p className="text-xs font-medium text-muted-foreground">Payout</p>
                 <p className="mt-1 text-xl font-bold">{formatRupees(focusPayout)}</p>
               </div>
-              <div className="rounded-md border bg-background/80 p-3">
+              <div className="rounded-2xl border bg-background/80 p-3">
                 <p className="text-xs font-medium text-muted-foreground">Queue rank</p>
                 <p className="mt-1 text-xl font-bold">
                   {focusOrder && sortedAvailableOrders.length > 0 && activeOrders.length === 0 ? "Best" : activeOrders.length > 0 ? "Locked" : "Open"}
@@ -344,8 +339,8 @@ export default function RiderDashboard() {
           </div>
         </section>
 
-        <div className="grid gap-4 md:grid-cols-4 mb-6">
-          <Card className="card-elevated">
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="app-tile">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium">Active delivery</CardTitle>
               <Truck className="h-4 w-4 text-muted-foreground" />
@@ -355,7 +350,7 @@ export default function RiderDashboard() {
               <p className="text-xs text-muted-foreground">Only one active order at a time</p>
             </CardContent>
           </Card>
-          <Card className="card-elevated">
+          <Card className="app-tile">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium">Completed today</CardTitle>
               <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
@@ -365,7 +360,7 @@ export default function RiderDashboard() {
               <p className="text-xs text-muted-foreground">Delivered orders</p>
             </CardContent>
           </Card>
-          <Card className="card-elevated">
+          <Card className="app-tile">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium">Today earnings</CardTitle>
               <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -378,7 +373,7 @@ export default function RiderDashboard() {
               <p className="text-xs text-muted-foreground">Cash plus Droplix-covered orders</p>
             </CardContent>
           </Card>
-          <Card className="card-elevated">
+          <Card className="app-tile">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium">Payout split</CardTitle>
               <Sparkles className="h-4 w-4 text-muted-foreground" />

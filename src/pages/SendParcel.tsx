@@ -1,5 +1,5 @@
 import { Navigate, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, KeyRound, Loader2, MapPin, ShieldCheck, Truck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, KeyRound, Loader2, MapPin, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -41,56 +41,59 @@ export default function SendParcel() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-5 md:py-8">
+      <div className="app-screen container app-page-stack max-w-6xl py-4 md:py-8">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" asChild className="rounded-full">
             <Link to="/dashboard">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to orders
             </Link>
           </Button>
-          <div className="hidden rounded-full border bg-card/90 px-3 py-1 text-xs font-semibold text-muted-foreground sm:block">
+          <div className="app-action-pill hidden sm:inline-flex">
             Secure sender booking
           </div>
         </div>
 
         <div className="grid xl:grid-cols-[1fr_360px] gap-6 items-start">
           <div className="min-w-0">
-            <div className="mb-5 rounded-lg border bg-card/90 p-5 shadow-sm">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+            <section className="app-hero mb-5 p-5 sm:p-6">
+              <div className="app-hero-chip mb-4">
                 <ShieldCheck className="h-4 w-4" />
                 Mumbai delivery command
               </div>
               <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
                 <div>
-                  <h1 className="font-heading text-3xl md:text-4xl font-bold">Send a parcel</h1>
-                  <p className="text-muted-foreground mt-2 max-w-2xl">
-                    Book the route, declare the item, share the receiver link, and keep verification in one flow.
+                  <h1 className="font-heading text-3xl font-extrabold md:text-4xl">Send with confidence</h1>
+                  <p className="app-hero-subtle mt-2 max-w-2xl text-sm leading-6 sm:text-base">
+                    A guided handoff flow for pickup, protection, locked fare, receiver link, and OTP delivery.
                   </p>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-md border bg-background p-2">
-                    <p className="text-xs font-semibold text-muted-foreground">Step</p>
-                    <p className="text-lg font-bold">4</p>
+                <div className="app-metric-grid min-w-[260px]">
+                  <div className="app-metric-tile">
+                    <span>Flow</span>
+                    <strong>4</strong>
                   </div>
-                  <div className="rounded-md border bg-background p-2">
-                    <p className="text-xs font-semibold text-muted-foreground">OTP</p>
-                    <p className="text-lg font-bold">On</p>
+                  <div className="app-metric-tile">
+                    <span>OTP</span>
+                    <strong>On</strong>
                   </div>
-                  <div className="rounded-md border bg-background p-2">
-                    <p className="text-xs font-semibold text-muted-foreground">Proof</p>
-                    <p className="text-lg font-bold">Ready</p>
+                  <div className="app-metric-tile">
+                    <span>Proof</span>
+                    <strong>Ready</strong>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
             <CreateOrderForm />
           </div>
 
           <aside className="xl:sticky xl:top-24 space-y-4">
-            <Card className="card-elevated">
+            <Card className="app-card">
               <CardContent className="p-5 space-y-4">
                 <div>
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
                   <p className="font-heading text-lg font-semibold">What happens next</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Built to avoid lost parcels, wrong OTPs, and confused handoffs.
@@ -98,8 +101,8 @@ export default function SendParcel() {
                 </div>
                 <div className="space-y-3">
                   {flowPoints.map((point) => (
-                    <div key={point.title} className="flex gap-3 rounded-md border bg-background/80 p-3">
-                      <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div key={point.title} className="app-flow-card flex gap-3 p-3">
+                      <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                         <point.icon className="h-4 w-4" />
                       </div>
                       <div>
@@ -112,7 +115,7 @@ export default function SendParcel() {
               </CardContent>
             </Card>
 
-            <Card className="border-emerald-500/30 bg-emerald-500/10">
+            <Card className="app-card border-emerald-500/30 bg-emerald-500/10">
               <CardContent className="p-5 flex gap-3">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>

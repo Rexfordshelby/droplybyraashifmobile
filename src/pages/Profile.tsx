@@ -274,7 +274,7 @@ export default function ProfilePage() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="profile-mobile-canvas container max-w-5xl space-y-4 py-4 md:py-8">
+      <div className="profile-mobile-canvas app-screen container app-page-stack max-w-5xl py-4 md:py-8">
         <section className="profile-cover-panel">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-4">

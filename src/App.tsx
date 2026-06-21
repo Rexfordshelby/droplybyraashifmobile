@@ -46,8 +46,11 @@ const ConfigurationWarning = () => {
 };
 
 const RouteFallback = () => (
-  <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">
-    Loading...
+  <div className="flex min-h-[50vh] items-center justify-center p-5 text-sm text-muted-foreground">
+    <div className="app-card flex items-center gap-3 px-4 py-3">
+      <span className="h-2.5 w-2.5 animate-soft-pulse rounded-full bg-primary" />
+      Loading Droplix...
+    </div>
   </div>
 );
 

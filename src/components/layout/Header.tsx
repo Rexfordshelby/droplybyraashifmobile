@@ -31,11 +31,11 @@ export function Header() {
 
   const isActive = (path: string) => location.pathname === path;
   const navButtonClass = (path: string, tone = '') =>
-    `h-10 rounded-md px-3 ${isActive(path) ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'text-muted-foreground hover:text-foreground'} ${tone}`;
+    `h-10 rounded-xl px-3 ${isActive(path) ? 'bg-foreground text-background shadow-sm hover:bg-foreground/90' : 'text-muted-foreground hover:text-foreground'} ${tone}`;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/95 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-card/90">
-      <div className="container flex h-[68px] items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-border/55 bg-card/82 shadow-[0_18px_48px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/78">
+      <div className="container flex h-[66px] items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <DroplixLogo variant="mark" size={34} className="sm:hidden" />
@@ -43,7 +43,7 @@ export function Header() {
           </Link>
 
           {user && (
-            <nav className="hidden items-center gap-1 rounded-lg border bg-background/70 p-1 md:flex">
+            <nav className="hidden items-center gap-1 rounded-2xl border bg-background/70 p-1 md:flex">
               <Link to="/dashboard">
                 <Button variant="ghost" size="sm" className={navButtonClass('/dashboard')}>
                   <LayoutDashboard className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function Header() {
                   <Button variant="ghost" size="icon" className="relative rounded-md">
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
-                      <Badge 
+                      <Badge
                         className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                         variant="destructive"
                       >
@@ -171,11 +171,11 @@ export function Header() {
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="rounded-md">
+            <Button variant="ghost" size="icon" className="rounded-2xl">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] border-l bg-background p-5">
+          <SheetContent side="right" className="w-[310px] border-l bg-background/95 p-5 shadow-2xl backdrop-blur-2xl">
             <div className="flex items-center gap-2 mb-8">
               <DroplixLogo size={42} />
             </div>
@@ -186,7 +186,7 @@ export function Header() {
                   <Link 
                     to="/send" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md bg-primary p-3 font-semibold text-primary-foreground shadow-sm"
+                    className="flex items-center gap-3 rounded-2xl bg-primary p-3 font-semibold text-primary-foreground shadow-sm"
                   >
                     <Send className="h-5 w-5" />
                     Send Parcel
@@ -195,7 +195,7 @@ export function Header() {
                   <Link 
                     to="/dashboard" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     My Orders
@@ -204,7 +204,7 @@ export function Header() {
                   <Link
                     to="/business/dashboard"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Store className="h-5 w-5" />
                     Store Dashboard
@@ -214,7 +214,7 @@ export function Header() {
                     <Link 
                       to="/rider" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 rounded-md bg-emerald-500/10 p-3 font-semibold text-emerald-700 dark:text-emerald-300"
+                      className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 p-3 font-semibold text-emerald-700 dark:text-emerald-300"
                     >
                       <Bike className="h-5 w-5" />
                       Rider Dashboard
@@ -223,7 +223,7 @@ export function Header() {
                     <Link 
                       to="/become-rider" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 rounded-md border border-dashed border-primary/50 p-3 transition-colors hover:bg-primary/10"
+                      className="flex items-center gap-3 rounded-2xl border border-dashed border-primary/50 p-3 transition-colors hover:bg-primary/10"
                     >
                       <Bike className="h-5 w-5 text-primary" />
                       <div>
@@ -238,7 +238,7 @@ export function Header() {
                   <Link 
                     to="/notifications" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Bell className="h-5 w-5" />
                     Notifications
@@ -250,7 +250,7 @@ export function Header() {
                   <Link 
                     to="/profile" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <User className="h-5 w-5" />
                     Profile
@@ -260,7 +260,7 @@ export function Header() {
                     <Link 
                       to="/admin" 
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 rounded-md bg-primary/10 p-3 font-semibold text-primary transition-colors hover:bg-primary/15"
+                      className="flex items-center gap-3 rounded-2xl bg-primary/10 p-3 font-semibold text-primary transition-colors hover:bg-primary/15"
                     >
                       <ShieldCheck className="h-5 w-5" />
                       Admin Panel
@@ -284,7 +284,7 @@ export function Header() {
                   <Link 
                     to="/" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Home className="h-5 w-5" />
                     Home
@@ -292,7 +292,7 @@ export function Header() {
                   <Link 
                     to="/become-rider" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Bike className="h-5 w-5" />
                     Become a Rider
@@ -300,7 +300,7 @@ export function Header() {
                   <Link
                     to="/business"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     <Store className="h-5 w-5" />
                     Business
@@ -309,7 +309,7 @@ export function Header() {
                   <Link 
                     to="/auth" 
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-3 font-medium transition-colors hover:bg-secondary"
+                    className="flex items-center gap-3 rounded-2xl p-3 font-medium transition-colors hover:bg-secondary"
                   >
                     Sign In
                   </Link>

@@ -1,6 +1,6 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Clock, Gift, PackageCheck, Plus, Truck, UserPlus, XCircle } from 'lucide-react';
+import { ArrowUpRight, Clock, Gift, PackageCheck, Plus, ShieldCheck, Truck, UserPlus, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -54,9 +54,9 @@ export default function Dashboard() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-6 md:py-8 overflow-x-hidden">
+      <div className="app-screen container app-page-stack max-w-6xl overflow-x-hidden py-4 md:py-8">
         {isGuest && (
-          <Alert className="mb-6 bg-amber-500/10 border-amber-500/30">
+          <Alert className="app-card bg-amber-500/10 border-amber-500/30">
             <Clock className="h-4 w-4 text-amber-600" />
             <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
               <span className="text-amber-800 dark:text-amber-200">
@@ -75,7 +75,7 @@ export default function Dashboard() {
         )}
 
         {freeRemaining > 0 && (
-          <Alert className="mb-6 bg-emerald-500/10 border-emerald-500/30">
+          <Alert className="app-card border-emerald-500/30 bg-emerald-500/10">
             <Gift className="h-4 w-4 text-emerald-600" />
             <AlertDescription className="flex items-center justify-between flex-wrap gap-3">
               <span className="text-emerald-800 dark:text-emerald-200 font-medium">
@@ -88,42 +88,75 @@ export default function Dashboard() {
           </Alert>
         )}
 
-        <div className="mb-6 flex flex-col gap-4 rounded-lg border bg-card/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between md:p-5">
-          <div className="min-w-0">
-            <p className="mb-1 text-sm font-semibold uppercase text-primary">Sender workspace</p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold">My Orders</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Track live deliveries, share receiver links, and repeat common routes.
-            </p>
+        <section className="app-hero p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <div className="app-hero-chip mb-4">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Sender workspace
+              </div>
+              <h1 className="font-heading text-3xl font-extrabold sm:text-4xl">Your parcel control room</h1>
+              <p className="app-hero-subtle mt-2 max-w-2xl text-sm leading-6 sm:text-base">
+                Book, track, share receiver links, and handle secure OTP handoffs from one app screen.
+              </p>
+            </div>
+            <Button asChild className="h-12 rounded-2xl bg-white text-foreground shadow-xl hover:bg-white/92 lg:min-w-[178px]">
+              <Link to="/send">
+                <Plus className="h-4 w-4" />
+                Send Parcel
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild className="btn-gradient h-11 w-full sm:w-auto shrink-0">
-            <Link to="/send">
-              <Plus className="mr-2 h-4 w-4" />
-              Send Parcel
-            </Link>
-          </Button>
-        </div>
 
-        <div className="mb-6 grid gap-3 sm:grid-cols-3">
-          <div className="stat-tile">
+          <div className="app-metric-grid mt-5">
+            <div className="app-metric-tile">
+              <span>Active</span>
+              <strong>{activeOrders.length}</strong>
+              <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                <Truck className="h-3.5 w-3.5" />
+                Moving now
+              </p>
+            </div>
+            <div className="app-metric-tile">
+              <span>Completed</span>
+              <strong>{completedOrders.length}</strong>
+              <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                <PackageCheck className="h-3.5 w-3.5" />
+                Delivered
+              </p>
+            </div>
+            <div className="app-metric-tile">
+              <span>Credits</span>
+              <strong>{freeRemaining}</strong>
+              <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-white/70">
+                <Gift className="h-3.5 w-3.5" />
+                Free left
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="app-tile">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-muted-foreground">Active</span>
+              <span className="text-sm font-semibold text-muted-foreground">Live orders</span>
               <Truck className="h-4 w-4 text-primary" />
             </div>
             <p className="text-3xl font-bold">{activeOrders.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">Need attention now</p>
           </div>
-          <div className="stat-tile">
+          <div className="app-tile">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-muted-foreground">Completed</span>
+              <span className="text-sm font-semibold text-muted-foreground">Safe handoffs</span>
               <PackageCheck className="h-4 w-4 text-success" />
             </div>
             <p className="text-3xl font-bold">{completedOrders.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">Delivered successfully</p>
           </div>
-          <div className="stat-tile">
+          <div className="app-tile">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-muted-foreground">Cancelled</span>
+              <span className="text-sm font-semibold text-muted-foreground">Closed</span>
               <XCircle className="h-4 w-4 text-destructive" />
             </div>
             <p className="text-3xl font-bold">{cancelledOrders.length}</p>

@@ -115,31 +115,36 @@ export default function BusinessDashboard() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container max-w-6xl space-y-5 py-5 md:py-8">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+      <div className="app-screen container app-page-stack max-w-6xl py-4 md:py-8">
+        <section className="app-hero p-5 sm:p-6">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
           <div>
-            <Badge className="rounded-full bg-primary text-primary-foreground">Store portal</Badge>
-            <h1 className="mt-3 font-heading text-3xl font-bold sm:text-4xl">Business dashboard</h1>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            <div className="app-hero-chip">
+              <Store className="h-3.5 w-3.5" />
+              Store portal
+            </div>
+            <h1 className="mt-4 font-heading text-3xl font-extrabold sm:text-4xl">Business delivery cockpit</h1>
+            <p className="app-hero-subtle mt-2 max-w-2xl text-sm leading-6 sm:text-base">
               Manage B2P customer deliveries, B2B supplier runs, batches, receipts, and approval status.
             </p>
           </div>
-          <Button asChild className="btn-gradient h-11">
+          <Button asChild className="h-12 rounded-2xl bg-white text-foreground shadow-xl hover:bg-white/92">
             <Link to="/send">
               Book business delivery
               <Send className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
+          </div>
+        </section>
 
         {loading ? (
-          <Card className="card-elevated">
+          <Card className="app-card">
             <CardContent className="flex min-h-48 items-center justify-center">
               <Loader2 className="h-7 w-7 animate-spin text-primary" />
             </CardContent>
           </Card>
         ) : accounts.length === 0 ? (
-          <Card className="card-elevated">
+          <Card className="app-card">
             <CardHeader>
               <CardTitle className="font-heading text-2xl">Create your store profile</CardTitle>
               <CardDescription>Admin approval unlocks business delivery booking and store analytics.</CardDescription>
@@ -205,7 +210,7 @@ export default function BusinessDashboard() {
           </Card>
         ) : (
           <>
-            <Card className="card-elevated">
+            <Card className="app-card">
               <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div className="flex min-w-0 items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -228,7 +233,7 @@ export default function BusinessDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4 lg:w-[460px]">
                   {accountMetrics.map(({ label, value, icon: Icon }) => (
-                    <div key={label} className="rounded-md border bg-background p-3">
+                    <div key={label} className="rounded-2xl border bg-background/80 p-3">
                       <Icon className="mx-auto mb-1 h-4 w-4 text-primary" />
                       <p className="text-lg font-bold">{value}</p>
                       <p className="text-xs text-muted-foreground">{label}</p>
@@ -239,7 +244,7 @@ export default function BusinessDashboard() {
             </Card>
 
             <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-              <Card className="card-elevated">
+              <Card className="app-card">
                 <CardHeader>
                   <CardTitle className="font-heading">Create delivery batch</CardTitle>
                   <CardDescription>Group multiple stops for business runs.</CardDescription>
@@ -266,7 +271,7 @@ export default function BusinessDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="card-elevated">
+              <Card className="app-card">
                 <CardHeader>
                   <CardTitle className="font-heading">Recent business orders</CardTitle>
                   <CardDescription>B2P/B2B history for invoices, support, and repeat delivery planning.</CardDescription>
@@ -286,7 +291,7 @@ export default function BusinessDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold">{order.item_description}</p>
-                          <p className="text-xs text-muted-foreground">{order.order_channel.toUpperCase()} · {order.status.replace('_', ' ')}</p>
+                          <p className="text-xs text-muted-foreground">{order.order_channel.toUpperCase()} - {order.status.replace('_', ' ')}</p>
                         </div>
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       </Link>
@@ -296,7 +301,7 @@ export default function BusinessDashboard() {
               </Card>
             </div>
 
-            <Card className="border-primary/20 bg-primary/5">
+            <Card className="app-card border-primary/20 bg-primary/5">
               <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />

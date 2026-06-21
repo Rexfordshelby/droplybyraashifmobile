@@ -1,5 +1,5 @@
 import { Navigate, Link } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Package } from 'lucide-react';
+import { Bell, Check, CheckCheck, Package, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -25,16 +25,32 @@ export default function Notifications() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-8 max-w-2xl">
-        <div className="flex items-center justify-between mb-8">
+      <div className="app-screen container app-page-stack max-w-2xl py-4 md:py-8">
+        <section className="app-hero p-5 sm:p-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <div className="app-hero-chip mb-4">
+                <Bell className="h-3.5 w-3.5" />
+                Alert center
+              </div>
+              <h1 className="font-heading text-3xl font-extrabold">Notifications</h1>
+              <p className="app-hero-subtle mt-2 text-sm">
+                {unreadCount > 0 ? `${unreadCount} unread updates need attention` : 'All deliveries are caught up'}
+              </p>
+            </div>
+            <div className="hidden h-12 w-12 place-items-center rounded-2xl border border-white/20 bg-white/15 text-white sm:grid">
+              <Sparkles className="h-5 w-5" />
+            </div>
+          </div>
+        </section>
+
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="font-heading text-3xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
-            </p>
+            <h2 className="font-heading text-xl font-bold">Inbox</h2>
+            <p className="text-sm text-muted-foreground">{unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}</p>
           </div>
           {unreadCount > 0 && (
-            <Button variant="outline" onClick={markAllAsRead}>
+            <Button variant="outline" onClick={markAllAsRead} className="rounded-2xl">
               <CheckCheck className="h-4 w-4 mr-2" />
               Mark all read
             </Button>
@@ -42,9 +58,9 @@ export default function Notifications() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading...</div>
+          <div className="app-card flex min-h-40 items-center justify-center text-sm text-muted-foreground">Loading alerts...</div>
         ) : notifications.length === 0 ? (
-          <Card className="card-elevated text-center py-12">
+          <Card className="app-card py-12 text-center">
             <CardContent>
               <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No notifications yet</p>
@@ -55,11 +71,11 @@ export default function Notifications() {
             {notifications.map((notification) => (
               <Card 
                 key={notification.id} 
-                className={`card-elevated transition-all ${!notification.is_read ? 'border-primary/50 bg-primary/5' : ''}`}
+                className={`app-card transition-all active:scale-[0.99] ${!notification.is_read ? 'border-primary/50 bg-primary/5' : ''}`}
               >
                 <CardContent className="p-4">
                   <div className="flex gap-4">
-                    <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${!notification.is_read ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl ${!notification.is_read ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">

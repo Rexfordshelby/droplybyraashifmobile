@@ -635,7 +635,7 @@ export function CreateOrderForm() {
       )}
 
       {/* Progress Header */}
-      <Card className="card-elevated overflow-hidden">
+      <Card className="app-card overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-primary via-success to-accent" />
         <CardContent className="pt-6">
           <div className="mb-4">
@@ -683,7 +683,7 @@ export function CreateOrderForm() {
       </Card>
 
       {/* Main Form Card */}
-      <Card className="card-elevated overflow-hidden">
+      <Card className="app-card overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="font-heading text-xl flex items-center gap-2">
             <CurrentStepIcon className="h-5 w-5 text-primary" />
@@ -1684,7 +1684,7 @@ export function CreateOrderForm() {
               )}
 
               {/* Navigation */}
-              <div className="sticky bottom-3 z-20 flex flex-col gap-3 rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+              <div className="app-sticky-panel sticky bottom-3 z-20 flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   {currentStep > 1 ? (
                     <Button type="button" variant="outline" onClick={goBack} className="w-full sm:w-auto">

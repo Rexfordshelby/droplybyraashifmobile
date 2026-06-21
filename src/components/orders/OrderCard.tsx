@@ -400,7 +400,7 @@ export function OrderCard({
         amount={Number(order.price_offered)}
       />
 
-      <Card className={`card-elevated hover-lift animate-slide-up overflow-hidden transition-all ${order.status === 'pending' && isRider ? 'ring-2 ring-primary/40' : ''}`}>
+    <Card className={`app-card hover-lift animate-slide-up overflow-hidden transition-all ${order.status === 'pending' && isRider ? 'ring-2 ring-primary/40' : ''}`}>
         <div className={`h-1 ${order.status === 'delivered' ? 'bg-success' : order.status === 'cancelled' ? 'bg-destructive' : 'bg-primary'}`} />
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">

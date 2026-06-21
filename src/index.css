@@ -57,8 +57,10 @@
 
     --gradient-primary: linear-gradient(135deg, hsl(188 82% 34%), hsl(151 66% 34%));
     --gradient-accent: linear-gradient(135deg, hsl(38 91% 55%), hsl(188 82% 42%));
-    --gradient-cozy: linear-gradient(180deg, hsl(200 33% 98%) 0%, hsl(210 34% 96%) 46%, hsl(200 33% 98%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(198 50% 96%) 0%, hsl(151 45% 95%) 52%, hsl(38 88% 94%) 100%);
+    --gradient-cozy: linear-gradient(180deg, hsl(202 38% 99%) 0%, hsl(194 38% 96%) 34%, hsl(43 83% 96%) 72%, hsl(202 38% 99%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(190 74% 29%) 0%, hsl(153 63% 33%) 54%, hsl(38 92% 53%) 100%);
+    --gradient-panel: linear-gradient(145deg, hsl(0 0% 100% / 0.98) 0%, hsl(199 42% 97% / 0.94) 46%, hsl(42 90% 96% / 0.9) 100%);
+    --gradient-app-band: linear-gradient(158deg, hsl(188 82% 34% / 0.18) 0%, transparent 34%), linear-gradient(24deg, hsl(38 91% 55% / 0.18) 0%, transparent 30%), linear-gradient(180deg, hsl(202 38% 99%), hsl(204 28% 96%));
 
     --glass-bg: 0 0% 100% / 0.82;
     --glass-bg-strong: 0 0% 100% / 0.94;
@@ -66,6 +68,7 @@
 
     --shadow-soft: 0 16px 44px -34px hsl(221 29% 15% / 0.32), 0 1px 0 hsl(0 0% 100% / 0.9) inset;
     --shadow-glass: 0 18px 48px -36px hsl(188 82% 20% / 0.36), 0 1px 0 hsl(0 0% 100% / 0.8) inset;
+    --shadow-app: 0 26px 70px -46px hsl(221 29% 15% / 0.5), 0 1px 0 hsl(0 0% 100% / 0.84) inset;
     --shadow-glow: 0 18px 54px -32px hsl(188 82% 34% / 0.42);
 
     --font-heading: 'Plus Jakarta Sans', sans-serif;
@@ -111,7 +114,9 @@
     --glass-border: 0 0% 100% / 0.1;
 
     --gradient-cozy: linear-gradient(180deg, hsl(221 29% 10%) 0%, hsl(218 28% 13%) 48%, hsl(221 29% 10%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(218 28% 14%) 0%, hsl(190 34% 14%) 56%, hsl(31 28% 15%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(188 62% 20%) 0%, hsl(151 45% 19%) 56%, hsl(31 35% 18%) 100%);
+    --gradient-panel: linear-gradient(145deg, hsl(222 27% 13% / 0.98) 0%, hsl(216 25% 16% / 0.94) 54%, hsl(31 28% 15% / 0.78) 100%);
+    --gradient-app-band: linear-gradient(158deg, hsl(188 76% 48% / 0.12) 0%, transparent 34%), linear-gradient(24deg, hsl(38 91% 60% / 0.11) 0%, transparent 30%), linear-gradient(180deg, hsl(221 29% 10%), hsl(218 28% 13%));
   }
 }
 
@@ -133,11 +138,8 @@
 
   body {
     @apply text-foreground;
-    background:
-      linear-gradient(hsl(var(--border) / 0.35) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.28) 1px, transparent 1px),
-      var(--gradient-cozy);
-    background-size: 44px 44px, 44px 44px, auto;
+    background: var(--gradient-app-band);
+    background-attachment: fixed;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
@@ -169,7 +171,161 @@
 
 @layer components {
   .app-shell {
-    background: transparent;
+    position: relative;
+    isolation: isolate;
+    background:
+      linear-gradient(180deg, hsl(var(--background) / 0.22), hsl(var(--background) / 0.88) 34rem),
+      transparent;
+  }
+
+  .app-shell::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(115deg, transparent 0%, hsl(var(--primary) / 0.1) 22%, transparent 45%),
+      linear-gradient(245deg, transparent 0%, hsl(var(--accent) / 0.12) 26%, transparent 52%);
+    opacity: 0.9;
+  }
+
+  .app-screen {
+    @apply mx-auto w-full;
+  }
+
+  .app-page-stack {
+    @apply space-y-4 md:space-y-6;
+  }
+
+  .app-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.45rem;
+    border: 1px solid hsl(0 0% 100% / 0.26);
+    background: var(--gradient-hero);
+    color: hsl(0 0% 100%);
+    box-shadow: 0 28px 70px -46px hsl(var(--primary) / 0.9);
+  }
+
+  .app-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, hsl(0 0% 100% / 0.12) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(0 0% 100% / 0.11) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity: 0.24;
+    mask-image: linear-gradient(180deg, black 0%, transparent 86%);
+  }
+
+  .app-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 46%;
+    background: linear-gradient(180deg, transparent, hsl(0 0% 0% / 0.16));
+  }
+
+  .app-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .app-hero-chip {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-extrabold uppercase;
+    border: 1px solid hsl(0 0% 100% / 0.28);
+    background: hsl(0 0% 100% / 0.16);
+    color: hsl(0 0% 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .app-hero-subtle {
+    color: hsl(0 0% 100% / 0.78);
+  }
+
+  .app-metric-grid {
+    @apply grid gap-2;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .app-metric-tile {
+    min-height: 5.2rem;
+    border-radius: 1rem;
+    border: 1px solid hsl(0 0% 100% / 0.22);
+    background: hsl(0 0% 100% / 0.14);
+    padding: 0.75rem;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .app-metric-tile span {
+    display: block;
+    color: hsl(0 0% 100% / 0.72);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .app-metric-tile strong {
+    display: block;
+    margin-top: 0.25rem;
+    color: hsl(0 0% 100%);
+    font-size: 1.55rem;
+    line-height: 1;
+    font-weight: 900;
+  }
+
+  .app-card {
+    @apply rounded-2xl border text-card-foreground;
+    background: var(--gradient-panel);
+    border-color: hsl(var(--border) / 0.78);
+    box-shadow: var(--shadow-app);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .app-card:hover {
+    border-color: hsl(var(--primary) / 0.22);
+  }
+
+  .app-tile {
+    @apply rounded-2xl border p-4;
+    background: hsl(var(--card) / 0.92);
+    border-color: hsl(var(--border) / 0.72);
+    box-shadow: 0 18px 42px -36px hsl(var(--foreground) / 0.42);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  }
+
+  .app-tile:active,
+  .app-card:active,
+  .app-flow-card:active {
+    transform: scale(0.99);
+  }
+
+  .app-flow-card {
+    @apply rounded-2xl border p-4;
+    background:
+      linear-gradient(135deg, hsl(var(--card) / 0.96), hsl(var(--secondary) / 0.72)),
+      hsl(var(--card));
+    border-color: hsl(var(--border) / 0.76);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .app-action-pill {
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-extrabold uppercase;
+    border-color: hsl(var(--primary) / 0.24);
+    background: hsl(var(--primary) / 0.09);
+    color: hsl(var(--primary));
+  }
+
+  .app-sticky-panel {
+    @apply rounded-2xl border;
+    background: hsl(var(--background) / 0.88);
+    border-color: hsl(var(--border) / 0.76);
+    box-shadow: 0 18px 44px -32px hsl(var(--foreground) / 0.4);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .btn-gradient {
@@ -325,7 +481,7 @@
   }
 
   .native-tabbar {
-    background: linear-gradient(180deg, transparent, hsl(var(--background) / 0.9) 30%, hsl(var(--background)));
+    background: linear-gradient(180deg, transparent, hsl(var(--background) / 0.84) 24%, hsl(var(--background)));
   }
 
   .native-tab-item::after {
@@ -369,12 +525,33 @@
   }
 
   .profile-cover-panel {
+    position: relative;
     overflow: hidden;
     border-radius: 1.5rem;
     padding: 1rem;
     background:
-      linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary) / 0.88) 52%, hsl(var(--accent) / 0.2) 100%),
-      hsl(var(--card));
+      linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--success)) 54%, hsl(var(--accent)) 100%);
+    color: hsl(0 0% 100%);
+  }
+
+  .profile-cover-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, hsl(0 0% 100% / 0.12) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(0 0% 100% / 0.1) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity: 0.18;
+  }
+
+  .profile-cover-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .profile-cover-panel .text-muted-foreground {
+    color: hsl(0 0% 100% / 0.76);
   }
 
   .profile-section {
@@ -423,28 +600,30 @@
     width: 2.55rem;
     flex: 0 0 auto;
     border-radius: 0.9rem;
-    background: hsl(var(--background) / 0.72);
+    border-color: hsl(0 0% 100% / 0.24);
+    background: hsl(0 0% 100% / 0.16);
+    color: hsl(0 0% 100%);
   }
 
   .profile-metric {
     min-height: 5.25rem;
     border-radius: 1rem;
-    border: 1px solid hsl(var(--border) / 0.7);
-    background: hsl(var(--background) / 0.74);
+    border: 1px solid hsl(0 0% 100% / 0.2);
+    background: hsl(0 0% 100% / 0.14);
     padding: 0.85rem;
   }
 
   .profile-metric span,
   .profile-metric small {
     display: block;
-    color: hsl(var(--muted-foreground));
+    color: hsl(0 0% 100% / 0.72);
     font-size: 0.75rem;
   }
 
   .profile-metric strong {
     display: block;
     margin-top: 0.15rem;
-    color: hsl(var(--foreground));
+    color: hsl(0 0% 100%);
     font-size: 1.55rem;
     font-weight: 900;
     line-height: 1;
@@ -456,6 +635,8 @@
     gap: 0.65rem;
     border-radius: 1.25rem;
     padding: 0.65rem;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .profile-action-tile {
@@ -827,8 +1008,28 @@ html.app-compact-cards .card-elevated {
   .surface-card,
   .glass-card,
   .section-shell,
-  .stat-tile {
+  .stat-tile,
+  .app-card,
+  .app-tile,
+  .app-flow-card {
     border-radius: 0.875rem;
+  }
+
+  .app-hero {
+    border-radius: 1.1rem;
+  }
+
+  .app-metric-grid {
+    gap: 0.5rem;
+  }
+
+  .app-metric-tile {
+    min-height: 4.65rem;
+    padding: 0.65rem;
+  }
+
+  .app-metric-tile strong {
+    font-size: 1.32rem;
   }
 
   html.app-compact-cards .container {
@@ -837,7 +1038,9 @@ html.app-compact-cards .card-elevated {
   }
 
   html.app-compact-cards .card-elevated,
-  html.app-compact-cards .stat-tile {
+  html.app-compact-cards .stat-tile,
+  html.app-compact-cards .app-card,
+  html.app-compact-cards .app-tile {
     border-radius: 0.75rem;
   }
 
