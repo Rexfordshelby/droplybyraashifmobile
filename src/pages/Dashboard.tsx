@@ -100,7 +100,7 @@ export default function Dashboard() {
                 Book, track, share receiver links, and handle secure OTP handoffs from one app screen.
               </p>
             </div>
-            <Button asChild className="h-12 rounded-2xl bg-white text-foreground shadow-xl hover:bg-white/92 lg:min-w-[178px]">
+            <Button asChild className="app-solid-cta h-12 rounded-2xl lg:min-w-[178px]">
               <Link to="/send">
                 <Plus className="h-4 w-4" />
                 Send Parcel

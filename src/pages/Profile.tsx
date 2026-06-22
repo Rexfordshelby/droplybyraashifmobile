@@ -315,7 +315,7 @@ export default function ProfilePage() {
                 <p className="mt-1 truncate text-sm text-muted-foreground">{email || 'Add email to your account'}</p>
               </div>
             </div>
-            <Button type="button" size="icon" variant="outline" className="profile-icon-button" onClick={handleSignOut}>
+            <Button type="button" size="icon" variant="outline" className="profile-icon-button" onClick={handleSignOut} aria-label="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -338,7 +338,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border bg-background/80 p-4">
+          <div className="profile-strength-card mt-5 rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">Profile strength</p>
