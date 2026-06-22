@@ -106,7 +106,7 @@ function uniqueOrders(orders: Order[]) {
 
 export default function ProfilePage() {
   const { user, loading: authLoading, roles, signOut } = useAuth();
-  const { rider, loading: riderLoading, toggleOnlineStatus } = useRider();
+  const { rider, toggleOnlineStatus } = useRider();
   const { orders, loading: ordersLoading } = useOrders();
   const { freeRemaining, promo, loading: promoLoading } = usePromos();
   const { unreadCount } = useNotifications();
@@ -260,11 +260,25 @@ export default function ProfilePage() {
     navigate('/auth', { replace: true });
   };
 
-  if (authLoading || loading || riderLoading) {
+  if (authLoading || loading) {
     return (
       <MainLayout showFooter={false}>
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="profile-mobile-canvas app-screen container max-w-5xl py-4 md:py-8">
+          <section className="profile-cover-panel min-h-56">
+            <div className="flex items-center gap-4">
+              <div className="profile-avatar animate-soft-pulse" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-4 w-28 rounded-full bg-white/25" />
+                <div className="h-8 w-44 rounded-full bg-white/30" />
+                <div className="h-4 w-56 max-w-full rounded-full bg-white/20" />
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="profile-metric animate-soft-pulse" />
+              <div className="profile-metric animate-soft-pulse" />
+              <div className="profile-metric animate-soft-pulse" />
+            </div>
+          </section>
         </div>
       </MainLayout>
     );
@@ -295,7 +309,7 @@ export default function ProfilePage() {
                     </Badge>
                   )}
                 </div>
-                <h1 className="mt-3 truncate font-heading text-2xl font-bold text-foreground md:text-3xl">
+                <h1 className="mt-3 truncate font-heading text-2xl font-bold text-white md:text-3xl">
                   {displayName}
                 </h1>
                 <p className="mt-1 truncate text-sm text-muted-foreground">{email || 'Add email to your account'}</p>
@@ -306,7 +320,7 @@ export default function ProfilePage() {
             </Button>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-3 gap-3">
             <div className="profile-metric">
               <span>Active</span>
               <strong>{ordersLoading ? '-' : activeOrderCount}</strong>
@@ -336,7 +350,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="profile-action-strip" aria-label="Mobile shortcuts">
+        <section className="profile-action-strip hidden md:grid" aria-label="Workspace shortcuts">
           <button type="button" onClick={() => goToWorkspace('sender')} className="profile-action-tile">
             <LayoutDashboard className="h-5 w-5" />
             <span>Orders</span>

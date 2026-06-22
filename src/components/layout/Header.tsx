@@ -37,7 +37,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/55 bg-card/82 shadow-[0_18px_48px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/78">
       <div className="container flex h-[66px] items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/" className="flex min-h-11 min-w-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <DroplixLogo variant="mark" size={34} className="sm:hidden" />
             <DroplixLogo size={40} className="hidden sm:inline-flex" />
           </Link>
@@ -171,7 +171,7 @@ export function Header() {
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="rounded-2xl">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>

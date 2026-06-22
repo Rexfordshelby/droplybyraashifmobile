@@ -60,7 +60,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-amber-600" />
             <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
               <span className="text-amber-800 dark:text-amber-200">
-                You are using a guest account. Your session expires in 24 hours.
+                Guest session expires in 24 hours.
               </span>
               <ConvertGuestModal
                 trigger={
@@ -79,7 +79,7 @@ export default function Dashboard() {
             <Gift className="h-4 w-4 text-emerald-600" />
             <AlertDescription className="flex items-center justify-between flex-wrap gap-3">
               <span className="text-emerald-800 dark:text-emerald-200 font-medium">
-                You have {freeRemaining} free {freeRemaining === 1 ? 'delivery' : 'deliveries'} left. Send a parcel on us.
+                {freeRemaining} free {freeRemaining === 1 ? 'delivery' : 'deliveries'} left.
               </span>
               <Button asChild size="sm" className="btn-gradient">
                 <Link to="/send">Use Free Delivery</Link>

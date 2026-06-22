@@ -109,7 +109,7 @@ export default function Auth() {
               <Button 
                 onClick={handleGuestLogin} 
                 variant="outline" 
-                className="w-full"
+                className="h-12 w-full rounded-2xl"
                 disabled={guestLoading}
               >
                 {guestLoading ? 'Starting...' : 'Continue as Guest (24hr session)'}
@@ -126,9 +126,9 @@ export default function Auth() {
             </div>
 
             <Tabs defaultValue={defaultTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="mb-6 grid h-12 w-full grid-cols-2 rounded-2xl">
+                <TabsTrigger value="login" className="h-11 rounded-xl">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="h-11 rounded-xl">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -139,8 +139,8 @@ export default function Auth() {
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" placeholder="you@example.com" {...field} />
+                            <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" placeholder="you@example.com" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -151,14 +151,14 @@ export default function Auth() {
                         <FormLabel>Password</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" type="password" placeholder="••••••••" {...field} />
+                            <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" type="password" placeholder="Enter password" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <Button type="submit" className="w-full btn-gradient" disabled={loading}>
+                    <Button type="submit" className="btn-gradient h-12 w-full rounded-2xl" disabled={loading}>
                       {loading ? 'Signing in...' : 'Sign In'}
                     </Button>
                   </form>
@@ -173,8 +173,8 @@ export default function Auth() {
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" placeholder="John Doe" {...field} />
+                            <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" placeholder="John Doe" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -185,8 +185,8 @@ export default function Auth() {
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" placeholder="you@example.com" {...field} />
+                            <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" placeholder="you@example.com" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -197,8 +197,8 @@ export default function Auth() {
                         <FormLabel>Password</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" type="password" placeholder="••••••••" {...field} />
+                            <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" type="password" placeholder="Enter password" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -209,14 +209,14 @@ export default function Auth() {
                         <FormLabel>Confirm Password</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input className="pl-10" type="password" placeholder="••••••••" {...field} />
+                            <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                            <Input className="h-12 rounded-2xl pl-11" type="password" placeholder="Confirm password" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <Button type="submit" className="w-full btn-gradient" disabled={loading}>
+                    <Button type="submit" className="btn-gradient h-12 w-full rounded-2xl" disabled={loading}>
                       {loading ? 'Creating account...' : 'Create Account'}
                     </Button>
                   </form>

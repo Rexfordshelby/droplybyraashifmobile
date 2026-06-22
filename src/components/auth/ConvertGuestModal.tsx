@@ -89,8 +89,8 @@ export function ConvertGuestModal({ trigger }: ConvertGuestModalProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-10" placeholder="you@example.com" {...field} />
+                      <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Input className="h-12 rounded-2xl pl-11" placeholder="you@example.com" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -105,8 +105,8 @@ export function ConvertGuestModal({ trigger }: ConvertGuestModalProps) {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-10" type="password" placeholder="••••••••" {...field} />
+                      <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Input className="h-12 rounded-2xl pl-11" type="password" placeholder="Enter password" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -121,15 +121,15 @@ export function ConvertGuestModal({ trigger }: ConvertGuestModalProps) {
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-10" type="password" placeholder="••••••••" {...field} />
+                      <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Input className="h-12 rounded-2xl pl-11" type="password" placeholder="Confirm password" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full btn-gradient" disabled={loading}>
+            <Button type="submit" className="btn-gradient h-12 w-full rounded-2xl" disabled={loading}>
               {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>

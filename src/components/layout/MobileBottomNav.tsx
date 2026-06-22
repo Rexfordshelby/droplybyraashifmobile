@@ -60,7 +60,7 @@ export function MobileBottomNav() {
     { type: 'link', label: 'Send', href: '/send', icon: Send },
     {
       type: 'mode',
-      label: canUseRider ? (isRiderView ? 'User' : 'Rider') : 'Apply',
+      label: canUseRider ? (isRiderView ? 'User' : 'Rider') : 'Rider',
       icon: canUseRider ? (isRiderView ? UserRound : Bike) : Bike,
     },
     hasRole('admin')
@@ -90,7 +90,7 @@ export function MobileBottomNav() {
                 )}
               >
                 <span className="absolute -top-2 rounded-full border bg-background px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-primary shadow-sm">
-                  Mode
+                  {canUseRider ? 'Mode' : 'Apply'}
                 </span>
                 <Icon className="mt-1 h-5 w-5" />
                 <span>{item.label}</span>

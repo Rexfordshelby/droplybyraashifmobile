@@ -328,6 +328,11 @@
     -webkit-backdrop-filter: blur(18px);
   }
 
+  .app-shell input:not([type="checkbox"]):not([type="radio"]),
+  .app-shell textarea {
+    min-height: 3rem;
+  }
+
   .btn-gradient {
     background: var(--gradient-primary);
     @apply text-primary-foreground shadow-sm transition-all duration-200;
@@ -606,7 +611,7 @@
   }
 
   .profile-metric {
-    min-height: 5.25rem;
+    min-height: 4.85rem;
     border-radius: 1rem;
     border: 1px solid hsl(0 0% 100% / 0.2);
     background: hsl(0 0% 100% / 0.14);
@@ -624,7 +629,7 @@
     display: block;
     margin-top: 0.15rem;
     color: hsl(0 0% 100%);
-    font-size: 1.55rem;
+    font-size: 1.45rem;
     font-weight: 900;
     line-height: 1;
   }
@@ -1017,6 +1022,22 @@ html.app-compact-cards .card-elevated {
 
   .app-hero {
     border-radius: 1.1rem;
+    padding: 1.15rem !important;
+  }
+
+  .app-hero h1 {
+    font-size: 2rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .app-hero-chip {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.68rem;
+  }
+
+  .app-hero-subtle {
+    font-size: 0.96rem !important;
+    line-height: 1.55 !important;
   }
 
   .app-metric-grid {
@@ -1024,12 +1045,19 @@ html.app-compact-cards .card-elevated {
   }
 
   .app-metric-tile {
-    min-height: 4.65rem;
+    min-height: 4.05rem;
     padding: 0.65rem;
   }
 
   .app-metric-tile strong {
-    font-size: 1.32rem;
+    font-size: 1.28rem;
+  }
+
+  .app-shell main button:not([role="switch"]):not(.native-tab-item):not(.native-tab-toggle),
+  .app-shell main a.inline-flex,
+  .app-shell main [role="combobox"] {
+    min-height: 2.75rem;
+    border-radius: 1rem;
   }
 
   html.app-compact-cards .container {

@@ -616,7 +616,7 @@ export function CreateOrderForm() {
             </div>
             <div className="min-w-0">
               <p className="font-bold text-emerald-700 dark:text-emerald-300">
-                🎁 You have {freeEligibility.remaining} FREE {freeEligibility.remaining === 1 ? 'delivery' : 'deliveries'} left!
+                You have {freeEligibility.remaining} free {freeEligibility.remaining === 1 ? 'delivery' : 'deliveries'} left
               </p>
               <p className="text-sm text-muted-foreground">
                 This account and sender phone are eligible. This delivery is on us.
@@ -628,8 +628,7 @@ export function CreateOrderForm() {
       {!useFreeDelivery && freeRemaining > 0 && (
         <Card className="border-amber-500/30 bg-amber-500/10">
           <CardContent className="py-3 text-sm text-amber-900 dark:text-amber-100">
-            Enter your 10-digit sender phone to unlock free delivery. Each account and phone can use only 2 free deliveries.
-            {freeEligibility.reason && <span className="ml-1 font-medium">{freeEligibility.reason}</span>}
+            {freeEligibility.reason || 'Each account and sender phone can use only 2 free deliveries.'}
           </CardContent>
         </Card>
       )}
