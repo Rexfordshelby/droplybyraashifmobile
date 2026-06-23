@@ -31,19 +31,19 @@ export function Header() {
 
   const isActive = (path: string) => location.pathname === path;
   const navButtonClass = (path: string, tone = '') =>
-    `h-10 rounded-xl px-3 ${isActive(path) ? 'bg-foreground text-background shadow-sm hover:bg-foreground/90' : 'text-muted-foreground hover:text-foreground'} ${tone}`;
+    `h-11 rounded-[10px] px-3 ${isActive(path) ? 'bg-foreground text-background shadow-sm hover:bg-foreground/90' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'} ${tone}`;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/55 bg-card/82 shadow-[0_18px_48px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/78">
-      <div className="container flex h-[66px] items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white/94 backdrop-blur-xl supports-[backdrop-filter]:bg-white/88">
+      <div className="mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex min-h-11 min-w-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <DroplixLogo variant="mark" size={34} className="sm:hidden" />
-            <DroplixLogo size={40} className="hidden sm:inline-flex" />
+            <DroplixLogo variant="mark" size={40} className="sm:hidden" />
+            <DroplixLogo size={46} className="hidden sm:inline-flex" />
           </Link>
 
           {user && (
-            <nav className="hidden items-center gap-1 rounded-2xl border bg-background/70 p-1 md:flex">
+            <nav className="hidden items-center gap-1 rounded-2xl border bg-[var(--soft-background)] p-1 md:flex">
               <Link to="/dashboard">
                 <Button variant="ghost" size="sm" className={navButtonClass('/dashboard')}>
                   <LayoutDashboard className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function Header() {
           )}
         </div>
 
-        <nav className="hidden md:flex items-center gap-2">
+        <nav className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
               {!isRider && (
@@ -154,13 +154,13 @@ export function Header() {
           ) : (
             <>
               <Link to="/auth">
-                <Button variant="ghost" size="sm" className="h-10">Sign In</Button>
+                <Button variant="ghost" size="sm" className="home-nav-link">Sign In</Button>
               </Link>
               <Link to="/auth?tab=signup">
-                <Button size="sm" className="btn-gradient h-10">Get Started</Button>
+                <Button size="sm" className="home-nav-primary">Get Started</Button>
               </Link>
               <Link to="/business">
-                <Button variant="outline" size="sm" className="h-10 gap-2">
+                <Button variant="outline" size="sm" className="home-nav-secondary gap-2">
                   <Store className="h-4 w-4" />
                   Business
                 </Button>
@@ -171,7 +171,7 @@ export function Header() {
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-[10px] text-[var(--heading)] hover:bg-[var(--soft-background)]">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -314,7 +314,7 @@ export function Header() {
                     Sign In
                   </Link>
                   <Link to="/auth?tab=signup" onClick={() => setMobileOpen(false)}>
-                    <Button className="w-full btn-gradient">Get Started</Button>
+                    <Button className="home-nav-primary w-full">Get Started</Button>
                   </Link>
                 </>
               )}

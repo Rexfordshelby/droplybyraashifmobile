@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f929d" />
+    <meta name="theme-color" content="#0F8F83" />
+    <meta name="droplix-build" content="2026-06-23-ui-refresh" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow" />
 
@@ -39,6 +40,105 @@
       content="Book Mumbai parcel delivery with live tracking, OTP handoff, and clear local pricing."
     />
     <meta name="twitter:image" content="https://droplixmumbai.vercel.app/droplix-logo.png" />
+
+    <style>
+      :root {
+        --boot-bg: #f7fafc;
+        --boot-heading: #0f172a;
+        --boot-text: #475569;
+        --boot-primary: #0f8f83;
+        --boot-blue: #1265e8;
+        --boot-border: #dde5ee;
+      }
+
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 84% 18%, rgba(18, 101, 232, 0.1), transparent 35%),
+          radial-gradient(circle at 12% 82%, rgba(15, 143, 131, 0.1), transparent 35%),
+          var(--boot-bg);
+      }
+
+      .boot-splash {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: var(--boot-heading);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      .boot-card {
+        width: min(100%, 360px);
+        border: 1px solid var(--boot-border);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
+        padding: 28px 24px;
+        text-align: center;
+      }
+
+      .boot-logo {
+        width: 108px;
+        height: auto;
+        margin: 0 auto 18px;
+      }
+
+      .boot-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .boot-copy {
+        margin: 8px 0 0;
+        color: var(--boot-text);
+        font-size: 0.95rem;
+        line-height: 1.55;
+      }
+
+      .boot-loader {
+        width: 100%;
+        height: 4px;
+        margin-top: 22px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e8f7f4;
+      }
+
+      .boot-loader::before {
+        content: "";
+        display: block;
+        width: 46%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--boot-primary), var(--boot-blue));
+        animation: boot-slide 1.15s ease-in-out infinite;
+      }
+
+      @keyframes boot-slide {
+        0% {
+          transform: translateX(-110%);
+        }
+        100% {
+          transform: translateX(230%);
+        }
+      }
+    </style>
 
     <script type="application/ld+json">
       {
@@ -104,7 +204,16 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash" role="status" aria-live="polite">
+        <div class="boot-card">
+          <img class="boot-logo" src="/droplix-logo.png" alt="Droplix" />
+          <p class="boot-title">Loading Droplix</p>
+          <p class="boot-copy">Preparing your secure delivery workspace.</p>
+          <div class="boot-loader" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

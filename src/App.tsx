@@ -46,10 +46,16 @@ const ConfigurationWarning = () => {
 };
 
 const RouteFallback = () => (
-  <div className="flex min-h-[50vh] items-center justify-center p-5 text-sm text-muted-foreground">
-    <div className="app-card flex items-center gap-3 px-4 py-3">
-      <span className="h-2.5 w-2.5 animate-soft-pulse rounded-full bg-primary" />
-      Loading Droplix...
+  <div className="grid min-h-[60vh] place-items-center p-5">
+    <div className="w-full max-w-sm rounded-[22px] border bg-white/95 p-6 text-center shadow-[0_20px_55px_rgba(15,23,42,0.08)]">
+      <img src="/droplix-logo.png" alt="Droplix" className="mx-auto mb-4 h-auto w-24" />
+      <p className="font-heading text-lg font-extrabold text-[var(--heading)]">Loading Droplix</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--body-text)]">
+        Preparing your secure delivery workspace.
+      </p>
+      <div className="mt-5 h-1 overflow-hidden rounded-full bg-[var(--soft-teal)]">
+        <div className="h-full w-1/2 animate-[routePulse_1.1s_ease-in-out_infinite] rounded-full bg-primary" />
+      </div>
     </div>
   </div>
 );

@@ -65,6 +65,24 @@ const trustPoints = [
   'Delivery proof uploads',
 ];
 
+const deliverySteps = [
+  {
+    title: 'Book a parcel',
+    detail: 'Pickup, drop, item value and receiver phone.',
+    icon: Package,
+  },
+  {
+    title: 'Rider picks it up',
+    detail: 'Approved rider follows one focused route.',
+    icon: Bike,
+  },
+  {
+    title: 'Receiver confirms OTP',
+    detail: 'Delivery closes only after secure verification.',
+    icon: KeyRound,
+  },
+];
+
 export default function Index() {
   const { user } = useAuth();
   const { signInAsGuest, loading: guestLoading } = useGuestAuth();
@@ -82,93 +100,152 @@ export default function Index() {
 
   return (
     <MainLayout>
-      <section className="relative min-h-[calc(100vh-68px)] overflow-hidden">
-        <div className="hero-map" aria-hidden="true">
-          <span className="route-line left-[8%] top-[28%] w-[34%] rotate-[15deg]" />
-          <span className="route-line right-[7%] top-[44%] w-[40%] -rotate-[18deg] stagger-2" />
-          <span className="route-line left-[24%] bottom-[23%] w-[48%] rotate-[-6deg] stagger-3" />
-          <span className="route-dot left-[16%] top-[31%]" />
-          <span className="route-dot right-[24%] top-[38%]" />
-          <span className="route-dot left-[42%] bottom-[22%]" />
-        </div>
+      <section className="home-hero-section">
+        <div className="home-hero-shell mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="home-hero-grid">
+            <div className="min-w-0">
+              <div className="home-promo-badge">
+                <Zap className="h-4 w-4" />
+                First 2 deliveries free for new users
+              </div>
 
-        <div className="container relative z-10 flex min-h-[calc(100vh-68px)] flex-col justify-center py-10 md:py-16">
-          <div className="max-w-4xl">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border bg-card/90 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm backdrop-blur">
-              <Zap className="h-4 w-4" />
-              First 2 deliveries free for new users
+              <h1 className="home-hero-title mt-5">
+                Mumbai parcel delivery with <span>complete control</span> from booking to handoff.
+              </h1>
+
+              <p className="home-hero-copy mt-5">
+                Book local deliveries in minutes, follow every stage of the journey, and confirm secure handoffs with OTP verification.
+              </p>
+
+              <div className="home-hero-actions mt-7">
+                <Button
+                  size="lg"
+                  className="home-primary-button text-base"
+                  onClick={handleQuickSend}
+                  disabled={guestLoading}
+                >
+                  <Package className="h-5 w-5" />
+                  {guestLoading ? 'Starting order' : 'Send a parcel'}
+                </Button>
+                <Button asChild size="lg" variant="outline" className="home-secondary-button text-base">
+                  <Link to="/become-rider">
+                    <Bike className="h-5 w-5" />
+                    Become a rider
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="home-trust-list mt-7">
+                <div className="home-trust-item">
+                  <Shield className="h-4 w-4" />
+                  OTP-secured delivery
+                </div>
+                <div className="home-trust-item">
+                  <CheckCircle className="h-4 w-4" />
+                  Verified rider workflow
+                </div>
+                <div className="home-trust-item">
+                  <Truck className="h-4 w-4" />
+                  Live delivery updates
+                </div>
+              </div>
             </div>
-            <h1 className="max-w-3xl font-heading text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-              Mumbai parcel delivery with cleaner control from booking to handoff.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Droplix helps senders book quickly, riders follow a verified flow, and receivers confirm delivery with OTP tracking.
-            </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                className="btn-gradient h-12 px-6 text-base"
-                onClick={handleQuickSend}
-                disabled={guestLoading}
-              >
-                <Package className="h-5 w-5" />
-                {guestLoading ? 'Starting order' : 'Send a parcel'}
-              </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 px-6 text-base">
-                <Link to="/become-rider">
-                  <Bike className="h-5 w-5" />
-                  Become a rider
-                </Link>
-              </Button>
+            <div className="home-visual-card">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold uppercase text-[var(--brand-blue)]">Live delivery flow</p>
+                  <h2 className="mt-1 font-heading text-2xl font-bold text-[var(--heading)]">Secure handoff dashboard</h2>
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
+                    A clear route, single rider focus, and OTP confirmation at the receiver side.
+                  </p>
+                </div>
+                <span className="rounded-full border border-[var(--teal-border)] bg-[var(--soft-teal)] px-3 py-1 text-xs font-bold text-[var(--teal-text)]">
+                  OTP ready
+                </span>
+              </div>
+
+              <div className="home-route-panel mt-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-[var(--muted-text)]">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                      Pickup
+                    </div>
+                    <p className="mt-2 font-semibold text-[var(--heading)]">Andheri West</p>
+                    <p className="text-xs text-[var(--muted-text)]">Sender QR verified</p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-[var(--muted-text)]">
+                      <Package className="h-3.5 w-3.5 text-[var(--brand-blue)]" />
+                      Drop
+                    </div>
+                    <p className="mt-2 font-semibold text-[var(--heading)]">Bandra East</p>
+                    <p className="text-xs text-[var(--muted-text)]">Receiver OTP pending</p>
+                  </div>
+                </div>
+
+                <div className="home-route-line" />
+
+                <div className="flex items-center justify-between text-xs font-semibold text-[var(--muted-text)]">
+                  <span>Booked</span>
+                  <span>Picked up</span>
+                  <span>Delivered</span>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {deliverySteps.map((step, index) => (
+                  <div key={step.title} className="home-step-row">
+                    <div className="home-step-icon">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[var(--heading)]">{step.title}</p>
+                      <p className="text-xs leading-5 text-[var(--muted-text)]">{step.detail}</p>
+                    </div>
+                    <span className="rounded-full bg-[var(--brand-blue-light)] px-2.5 py-1 text-xs font-bold text-[var(--brand-blue)]">
+                      {index + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            <div className="glass-card p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-muted-foreground">Live route</span>
-                <span className="rounded-full bg-success/10 px-2 py-1 text-xs font-semibold text-success">Ready</span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex gap-3 rounded-md border bg-background/80 p-3">
-                  <MapPin className="mt-0.5 h-4 w-4 text-success" />
-                  <div>
-                    <p className="text-sm font-semibold">Andheri West</p>
-                    <p className="text-xs text-muted-foreground">Pickup confirmed by sender QR</p>
-                  </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="home-process-card">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--soft-teal)] text-primary">
+                  <MapPin className="h-5 w-5" />
                 </div>
-                <div className="flex gap-3 rounded-md border bg-background/80 p-3">
-                  <Truck className="mt-0.5 h-4 w-4 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold">Bandra East</p>
-                    <p className="text-xs text-muted-foreground">Receiver OTP protects drop-off</p>
-                  </div>
-                </div>
+                <span className="rounded-full bg-[var(--soft-teal)] px-2.5 py-1 text-xs font-bold text-[var(--teal-text)]">Ready</span>
               </div>
+              <h3 className="font-heading text-lg font-bold text-[var(--heading)]">Live route</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--body-text)]">
+                Pickup and drop details stay visible so sender, rider, and receiver know what happens next.
+              </p>
             </div>
 
-            <div className="glass-card p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-muted-foreground">Rider focus</span>
-                <Bike className="h-4 w-4 text-primary" />
+            <div className="home-process-card">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-blue-light)] text-[var(--brand-blue)]">
+                <Bike className="h-5 w-5" />
               </div>
-              <p className="text-3xl font-bold">1 order</p>
-              <p className="mt-1 text-sm text-muted-foreground">Single-delivery mode keeps the route simple and easier to support.</p>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full w-2/3 rounded-full bg-primary" />
-              </div>
+              <h3 className="font-heading text-lg font-bold text-[var(--heading)]">Rider focus</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--body-text)]">
+                Single-delivery mode keeps the handoff simple, trackable, and easier for support to audit.
+              </p>
             </div>
 
-            <div className="glass-card p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-muted-foreground">Support view</span>
-                <Shield className="h-4 w-4 text-primary" />
+            <div className="home-process-card">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--soft-teal)] text-primary">
+                <Shield className="h-5 w-5" />
               </div>
-              <div className="space-y-2">
+              <h3 className="font-heading text-lg font-bold text-[var(--heading)]">Support view</h3>
+              <div className="mt-3 space-y-2">
                 {trustPoints.slice(0, 3).map((point) => (
-                  <div key={point} className="flex items-center gap-2 text-sm font-medium">
-                    <CheckCircle className="h-4 w-4 text-success" />
+                  <div key={point} className="flex items-center gap-2 text-sm font-semibold text-[var(--body-text)]">
+                    <CheckCircle className="h-4 w-4 text-primary" />
                     {point}
                   </div>
                 ))}
@@ -178,12 +255,12 @@ export default function Index() {
         </div>
       </section>
 
-      <section className="border-y bg-card/70 py-6">
+      <section className="border-y bg-white py-6">
         <div className="container grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {trustPoints.map((point) => (
-            <div key={point} className="flex items-center gap-3 rounded-lg border bg-background/70 p-3">
-              <CheckCircle className="h-5 w-5 text-success" />
-              <span className="text-sm font-semibold">{point}</span>
+            <div key={point} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-[var(--heading)]">{point}</span>
             </div>
           ))}
         </div>
@@ -237,7 +314,7 @@ export default function Index() {
             <div className="grid gap-3">
               {workflow.map((item, index) => (
                 <div key={item.title} className="section-shell flex gap-4 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
                     {index + 1}
                   </div>
                   <div>
@@ -264,8 +341,8 @@ export default function Index() {
             <div className="rounded-lg border bg-background p-5 text-center">
               <p className="text-sm font-semibold text-muted-foreground">Starts from</p>
               <div className="mt-2 flex items-end justify-center gap-1">
-                <span className="text-4xl font-bold">₹30</span>
-                <span className="pb-1 text-sm text-muted-foreground">+ ₹8/km</span>
+                <span className="text-4xl font-bold">Rs 30</span>
+                <span className="pb-1 text-sm text-muted-foreground">+ Rs 8/km</span>
               </div>
               <Button className="btn-gradient mt-5 w-full" onClick={handleQuickSend} disabled={guestLoading}>
                 Calculate order
