@@ -698,7 +698,7 @@ export function useOrders() {
     if (data.sender_id) {
       await supabase.from('notifications').insert({
         user_id: data.sender_id,
-        title: 'Rider Assigned! 🏍️',
+        title: 'Rider assigned',
         message: 'A rider has accepted your parcel request and is heading to pick it up.',
         type: 'order_update',
         order_id: orderId,
@@ -706,7 +706,7 @@ export function useOrders() {
     }
 
     toast({
-      title: 'Order Accepted! 🎉',
+      title: 'Order accepted',
       description: 'You can now pick up the parcel. Contact details are available.',
     });
 

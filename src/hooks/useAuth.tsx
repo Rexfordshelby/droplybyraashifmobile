@@ -9,8 +9,15 @@ interface AuthContextType {
   session: Session | null;
   roles: UserRole[];
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string,
+    phoneVerificationToken: string
+  ) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: (redirectPath?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
   refetchRoles: () => Promise<void>;
@@ -20,6 +27,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const missingSupabaseError = new Error(
   'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.'
 );
+
+function getOAuthRedirectUrl(path = '/dashboard') {
+  const configuredOrigin = (import.meta.env.VITE_PUBLIC_APP_URL || '').replace(/\/+$/, '');
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
+  const isLocalOrigin = /^(http:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i.test(
+    currentOrigin.replace(/^https?:\/\//i, '')
+  );
+  const origin = configuredOrigin || (!isLocalOrigin ? currentOrigin : '') || currentOrigin;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${origin}${cleanPath}`;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -123,7 +141,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [bootstrapUser]);
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
+  const signUp = useCallback(async (
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string,
+    phoneVerificationToken: string
+  ) => {
     if (!isSupabaseConfigured) {
       return { error: missingSupabaseError };
     }
@@ -135,7 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          phone,
+          phone_verification_token: phoneVerificationToken,
+        },
       },
     });
 
@@ -150,6 +178,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+
+    return { error };
+  }, []);
+
+  const signInWithGoogle = useCallback(async (redirectPath = '/dashboard') => {
+    if (!isSupabaseConfigured) {
+      return { error: missingSupabaseError };
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: getOAuthRedirectUrl(redirectPath),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
     });
 
     return { error };
@@ -179,8 +226,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUserRoles, user]);
 
   const value = useMemo(
-    () => ({ user, session, roles, loading, signUp, signIn, signOut, hasRole, refetchRoles }),
-    [user, session, roles, loading, signUp, signIn, signOut, hasRole, refetchRoles]
+    () => ({ user, session, roles, loading, signUp, signIn, signInWithGoogle, signOut, hasRole, refetchRoles }),
+    [user, session, roles, loading, signUp, signIn, signInWithGoogle, signOut, hasRole, refetchRoles]
   );
 
   return (

@@ -174,6 +174,7 @@ export default function Track() {
 
             {order.status !== "cancelled" && order.status !== "delivered" && (
               <ShareReceiverCard
+                orderId={order.id}
                 trackingCode={order.tracking_code}
                 receiverPhone={order.receiver_phone}
                 itemDescription={order.item_description}

@@ -627,6 +627,7 @@ export function OrderCard({
           {!isRider && order.status !== 'cancelled' && order.status !== 'delivered' && (
             <div className="pt-3 border-t border-border space-y-3">
               <ShareReceiverCard
+                orderId={order.id}
                 trackingCode={order.tracking_code}
                 receiverPhone={order.receiver_phone}
                 itemDescription={order.item_description}
